@@ -1,0 +1,15 @@
+syntax = "proto3";
+package embed;
+
+option go_package= "github.com/Razeefshaik/vectorsearch-gateway/go/proto/embed";
+
+service EmbedService{
+    rpc Embed(EmbedRequest) returns (EmbedResponse);
+}
+
+message EmbedRequest{
+ string text=1;
+}
+message EmbedResponse{
+  repeated float vector=1;
+}
