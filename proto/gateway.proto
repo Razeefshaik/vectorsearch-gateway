@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package vectorsearch.gateway.v1;
+
+option go_package = "github.com/Razeefshaik/vectorsearch-gateway/go/proto/gatewaypb;gatewaypb";
+
+import "coordinator.proto";
+
+
+service Gateway{
+    rpc Insert(GatewayInsertRequest) returns (GatewayInsertResponse);
+    rpc Search(GatewaySearchRequest) returns (vectorsearch.coordinator.v1.SearchResponse);
+    rpc Delete(vectorsearch.coordinator.v1.DeleteRequest) returns (vectorsearch.coordinator.v1.DeleteResponse);
+}
+
+message GatewaySearchRequest {
+  string text = 1;
+  uint32 k = 2;
+  uint32 ef = 3;
+  bool allow_partial = 4;
+  uint64 client_id = 5;
+}
+
+message GatewayInsertRequest {
+  vectorsearch.coordinator.v1.Key key = 1;
+  string text = 2;
+}
+
+message GatewayInsertResponse {}

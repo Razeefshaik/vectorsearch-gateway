@@ -1,7 +1,7 @@
 syntax = "proto3";
 package embed;
 
-option go_package= "github.com/Razeefshaik/vectorsearch-gateway/go/proto/embed";
+option go_package= "github.com/Razeefshaik/vectorsearch-gateway/go/proto/embedpb;embedpb";
 
 service EmbedService{
     rpc Embed(EmbedRequest) returns (EmbedResponse);

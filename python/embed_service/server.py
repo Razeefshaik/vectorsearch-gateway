@@ -1,3 +1,5 @@
+import sys
+
 import grpc
 from concurrent import futures
 from sentence_transformers import SentenceTransformer
@@ -23,11 +25,12 @@ class EmbedServicer(embed_pb2_grpc.EmbedServiceServicer):
 
 
 def serve():
+    port = sys.argv[1] if len(sys.argv) > 1 else "50051"
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
     embed_pb2_grpc.add_EmbedServiceServicer_to_server(EmbedServicer(), server)
-    server.add_insecure_port("[::]:50051")
+    server.add_insecure_port(f"[::]:{port}")
     server.start()
-    print("embed service listening on :50051")
+    print(f"embed service listening on :{port}")
     server.wait_for_termination()
 
 

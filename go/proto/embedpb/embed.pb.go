@@ -2,9 +2,9 @@
 // versions:
 // 	protoc-gen-go v1.36.12
 // 	protoc        v7.35.1
-// source: proto/embed.proto
+// source: embed.proto
 
-package embed
+package embedpb
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -30,7 +30,7 @@ type EmbedRequest struct {
 
 func (x *EmbedRequest) Reset() {
 	*x = EmbedRequest{}
-	mi := &file_proto_embed_proto_msgTypes[0]
+	mi := &file_embed_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -42,7 +42,7 @@ func (x *EmbedRequest) String() string {
 func (*EmbedRequest) ProtoMessage() {}
 
 func (x *EmbedRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_embed_proto_msgTypes[0]
+	mi := &file_embed_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,7 +55,7 @@ func (x *EmbedRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmbedRequest.ProtoReflect.Descriptor instead.
 func (*EmbedRequest) Descriptor() ([]byte, []int) {
-	return file_proto_embed_proto_rawDescGZIP(), []int{0}
+	return file_embed_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *EmbedRequest) GetText() string {
@@ -74,7 +74,7 @@ type EmbedResponse struct {
 
 func (x *EmbedResponse) Reset() {
 	*x = EmbedResponse{}
-	mi := &file_proto_embed_proto_msgTypes[1]
+	mi := &file_embed_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -86,7 +86,7 @@ func (x *EmbedResponse) String() string {
 func (*EmbedResponse) ProtoMessage() {}
 
 func (x *EmbedResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_embed_proto_msgTypes[1]
+	mi := &file_embed_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -99,7 +99,7 @@ func (x *EmbedResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmbedResponse.ProtoReflect.Descriptor instead.
 func (*EmbedResponse) Descriptor() ([]byte, []int) {
-	return file_proto_embed_proto_rawDescGZIP(), []int{1}
+	return file_embed_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *EmbedResponse) GetVector() []float32 {
@@ -109,36 +109,36 @@ func (x *EmbedResponse) GetVector() []float32 {
 	return nil
 }
 
-var File_proto_embed_proto protoreflect.FileDescriptor
+var File_embed_proto protoreflect.FileDescriptor
 
-const file_proto_embed_proto_rawDesc = "" +
+const file_embed_proto_rawDesc = "" +
 	"\n" +
-	"\x11proto/embed.proto\x12\x05embed\"\"\n" +
+	"\vembed.proto\x12\x05embed\"\"\n" +
 	"\fEmbedRequest\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\"'\n" +
 	"\rEmbedResponse\x12\x16\n" +
 	"\x06vector\x18\x01 \x03(\x02R\x06vector2B\n" +
 	"\fEmbedService\x122\n" +
-	"\x05Embed\x12\x13.embed.EmbedRequest\x1a\x14.embed.EmbedResponseB<Z:github.com/Razeefshaik/vectorsearch-gateway/go/proto/embedb\x06proto3"
+	"\x05Embed\x12\x13.embed.EmbedRequest\x1a\x14.embed.EmbedResponseBFZDgithub.com/Razeefshaik/vectorsearch-gateway/go/proto/embedpb;embedpbb\x06proto3"
 
 var (
-	file_proto_embed_proto_rawDescOnce sync.Once
-	file_proto_embed_proto_rawDescData []byte
+	file_embed_proto_rawDescOnce sync.Once
+	file_embed_proto_rawDescData []byte
 )
 
-func file_proto_embed_proto_rawDescGZIP() []byte {
-	file_proto_embed_proto_rawDescOnce.Do(func() {
-		file_proto_embed_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_embed_proto_rawDesc), len(file_proto_embed_proto_rawDesc)))
+func file_embed_proto_rawDescGZIP() []byte {
+	file_embed_proto_rawDescOnce.Do(func() {
+		file_embed_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_embed_proto_rawDesc), len(file_embed_proto_rawDesc)))
 	})
-	return file_proto_embed_proto_rawDescData
+	return file_embed_proto_rawDescData
 }
 
-var file_proto_embed_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_proto_embed_proto_goTypes = []any{
+var file_embed_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_embed_proto_goTypes = []any{
 	(*EmbedRequest)(nil),  // 0: embed.EmbedRequest
 	(*EmbedResponse)(nil), // 1: embed.EmbedResponse
 }
-var file_proto_embed_proto_depIdxs = []int32{
+var file_embed_proto_depIdxs = []int32{
 	0, // 0: embed.EmbedService.Embed:input_type -> embed.EmbedRequest
 	1, // 1: embed.EmbedService.Embed:output_type -> embed.EmbedResponse
 	1, // [1:2] is the sub-list for method output_type
@@ -148,26 +148,26 @@ var file_proto_embed_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_proto_embed_proto_init() }
-func file_proto_embed_proto_init() {
-	if File_proto_embed_proto != nil {
+func init() { file_embed_proto_init() }
+func file_embed_proto_init() {
+	if File_embed_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_embed_proto_rawDesc), len(file_proto_embed_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_embed_proto_rawDesc), len(file_embed_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_embed_proto_goTypes,
-		DependencyIndexes: file_proto_embed_proto_depIdxs,
-		MessageInfos:      file_proto_embed_proto_msgTypes,
+		GoTypes:           file_embed_proto_goTypes,
+		DependencyIndexes: file_embed_proto_depIdxs,
+		MessageInfos:      file_embed_proto_msgTypes,
 	}.Build()
-	File_proto_embed_proto = out.File
-	file_proto_embed_proto_goTypes = nil
-	file_proto_embed_proto_depIdxs = nil
+	File_embed_proto = out.File
+	file_embed_proto_goTypes = nil
+	file_embed_proto_depIdxs = nil
 }

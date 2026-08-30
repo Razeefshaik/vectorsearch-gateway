@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package vectorsearch.ingest.v1;
+
+option go_package = "github.com/Razeefshaik/vectorsearch-gateway/go/proto/ingestpb;ingestpb";
+
+import "coordinator.proto";
+
+message IngestEvent {
+  vectorsearch.coordinator.v1.Key key = 1;
+  string content = 2;
+}

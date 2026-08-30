@@ -29,7 +29,7 @@ func (l *Limiter) Allow(clientID string) bool {
 		l.buckets[clientID] = bucket
 	}
 	l.mu.Unlock()
-	return l.buckets[clientID].Allow()
+	return bucket.Allow()
 }
 
 func (l *Limiter) StartCleanup(interval, idleTimeout time.Duration) {
