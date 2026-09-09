@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.2
 // - protoc             v7.35.1
-// source: proto/coordinator.proto
+// source: coordinator.proto
 
 // Public API: client -> coordinator. This is the only service external
 // clients ever talk to; ShardService (shard.proto) is internal.
@@ -196,5 +196,5 @@ var VectorSearch_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/coordinator.proto",
+	Metadata: "coordinator.proto",
 }

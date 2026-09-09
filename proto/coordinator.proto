@@ -41,6 +41,11 @@ message SearchRequest {
   // failed shard may have held the actual nearest neighbours. Set true only
   // when availability matters more than completeness for this query.
   bool allow_partial = 4;
+
+  // Scopes results to this client's own vectors -- without it, Search is a
+  // flat top-k over every client's vectors combined. See shard.proto (in
+  // the coordinator's own repo) for why there is no unfiltered mode.
+  uint64 client_id = 5;
 }
 
 message SearchResponse {

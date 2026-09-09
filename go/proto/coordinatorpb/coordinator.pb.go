@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.12
 // 	protoc        v7.35.1
-// source: proto/coordinator.proto
+// source: coordinator.proto
 
 // Public API: client -> coordinator. This is the only service external
 // clients ever talk to; ShardService (shard.proto) is internal.
@@ -34,7 +34,7 @@ type Key struct {
 
 func (x *Key) Reset() {
 	*x = Key{}
-	mi := &file_proto_coordinator_proto_msgTypes[0]
+	mi := &file_coordinator_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +46,7 @@ func (x *Key) String() string {
 func (*Key) ProtoMessage() {}
 
 func (x *Key) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_coordinator_proto_msgTypes[0]
+	mi := &file_coordinator_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +59,7 @@ func (x *Key) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Key.ProtoReflect.Descriptor instead.
 func (*Key) Descriptor() ([]byte, []int) {
-	return file_proto_coordinator_proto_rawDescGZIP(), []int{0}
+	return file_coordinator_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Key) GetClientId() uint64 {
@@ -86,7 +86,7 @@ type ScoredKey struct {
 
 func (x *ScoredKey) Reset() {
 	*x = ScoredKey{}
-	mi := &file_proto_coordinator_proto_msgTypes[1]
+	mi := &file_coordinator_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -98,7 +98,7 @@ func (x *ScoredKey) String() string {
 func (*ScoredKey) ProtoMessage() {}
 
 func (x *ScoredKey) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_coordinator_proto_msgTypes[1]
+	mi := &file_coordinator_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -111,7 +111,7 @@ func (x *ScoredKey) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScoredKey.ProtoReflect.Descriptor instead.
 func (*ScoredKey) Descriptor() ([]byte, []int) {
-	return file_proto_coordinator_proto_rawDescGZIP(), []int{1}
+	return file_coordinator_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ScoredKey) GetKey() *Key {
@@ -138,7 +138,7 @@ type InsertRequest struct {
 
 func (x *InsertRequest) Reset() {
 	*x = InsertRequest{}
-	mi := &file_proto_coordinator_proto_msgTypes[2]
+	mi := &file_coordinator_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -150,7 +150,7 @@ func (x *InsertRequest) String() string {
 func (*InsertRequest) ProtoMessage() {}
 
 func (x *InsertRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_coordinator_proto_msgTypes[2]
+	mi := &file_coordinator_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -163,7 +163,7 @@ func (x *InsertRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InsertRequest.ProtoReflect.Descriptor instead.
 func (*InsertRequest) Descriptor() ([]byte, []int) {
-	return file_proto_coordinator_proto_rawDescGZIP(), []int{2}
+	return file_coordinator_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *InsertRequest) GetKey() *Key {
@@ -188,7 +188,7 @@ type InsertResponse struct {
 
 func (x *InsertResponse) Reset() {
 	*x = InsertResponse{}
-	mi := &file_proto_coordinator_proto_msgTypes[3]
+	mi := &file_coordinator_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -200,7 +200,7 @@ func (x *InsertResponse) String() string {
 func (*InsertResponse) ProtoMessage() {}
 
 func (x *InsertResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_coordinator_proto_msgTypes[3]
+	mi := &file_coordinator_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -213,7 +213,7 @@ func (x *InsertResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InsertResponse.ProtoReflect.Descriptor instead.
 func (*InsertResponse) Descriptor() ([]byte, []int) {
-	return file_proto_coordinator_proto_rawDescGZIP(), []int{3}
+	return file_coordinator_proto_rawDescGZIP(), []int{3}
 }
 
 type DeleteRequest struct {
@@ -225,7 +225,7 @@ type DeleteRequest struct {
 
 func (x *DeleteRequest) Reset() {
 	*x = DeleteRequest{}
-	mi := &file_proto_coordinator_proto_msgTypes[4]
+	mi := &file_coordinator_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -237,7 +237,7 @@ func (x *DeleteRequest) String() string {
 func (*DeleteRequest) ProtoMessage() {}
 
 func (x *DeleteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_coordinator_proto_msgTypes[4]
+	mi := &file_coordinator_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -250,7 +250,7 @@ func (x *DeleteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteRequest.ProtoReflect.Descriptor instead.
 func (*DeleteRequest) Descriptor() ([]byte, []int) {
-	return file_proto_coordinator_proto_rawDescGZIP(), []int{4}
+	return file_coordinator_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *DeleteRequest) GetKey() *Key {
@@ -268,7 +268,7 @@ type DeleteResponse struct {
 
 func (x *DeleteResponse) Reset() {
 	*x = DeleteResponse{}
-	mi := &file_proto_coordinator_proto_msgTypes[5]
+	mi := &file_coordinator_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -280,7 +280,7 @@ func (x *DeleteResponse) String() string {
 func (*DeleteResponse) ProtoMessage() {}
 
 func (x *DeleteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_coordinator_proto_msgTypes[5]
+	mi := &file_coordinator_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -293,7 +293,7 @@ func (x *DeleteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteResponse.ProtoReflect.Descriptor instead.
 func (*DeleteResponse) Descriptor() ([]byte, []int) {
-	return file_proto_coordinator_proto_rawDescGZIP(), []int{5}
+	return file_coordinator_proto_rawDescGZIP(), []int{5}
 }
 
 type SearchRequest struct {
@@ -305,14 +305,18 @@ type SearchRequest struct {
 	// a partial top-k is not a safe substitute for the true top-k, since the
 	// failed shard may have held the actual nearest neighbours. Set true only
 	// when availability matters more than completeness for this query.
-	AllowPartial  bool `protobuf:"varint,4,opt,name=allow_partial,json=allowPartial,proto3" json:"allow_partial,omitempty"`
+	AllowPartial bool `protobuf:"varint,4,opt,name=allow_partial,json=allowPartial,proto3" json:"allow_partial,omitempty"`
+	// Scopes results to this client's own vectors -- without it, Search is a
+	// flat top-k over every client's vectors combined. See shard.proto (in
+	// the coordinator's own repo) for why there is no unfiltered mode.
+	ClientId      uint64 `protobuf:"varint,5,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SearchRequest) Reset() {
 	*x = SearchRequest{}
-	mi := &file_proto_coordinator_proto_msgTypes[6]
+	mi := &file_coordinator_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -324,7 +328,7 @@ func (x *SearchRequest) String() string {
 func (*SearchRequest) ProtoMessage() {}
 
 func (x *SearchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_coordinator_proto_msgTypes[6]
+	mi := &file_coordinator_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -337,7 +341,7 @@ func (x *SearchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchRequest.ProtoReflect.Descriptor instead.
 func (*SearchRequest) Descriptor() ([]byte, []int) {
-	return file_proto_coordinator_proto_rawDescGZIP(), []int{6}
+	return file_coordinator_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *SearchRequest) GetQuery() []float32 {
@@ -368,6 +372,13 @@ func (x *SearchRequest) GetAllowPartial() bool {
 	return false
 }
 
+func (x *SearchRequest) GetClientId() uint64 {
+	if x != nil {
+		return x.ClientId
+	}
+	return 0
+}
+
 type SearchResponse struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Results []*ScoredKey           `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
@@ -382,7 +393,7 @@ type SearchResponse struct {
 
 func (x *SearchResponse) Reset() {
 	*x = SearchResponse{}
-	mi := &file_proto_coordinator_proto_msgTypes[7]
+	mi := &file_coordinator_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -394,7 +405,7 @@ func (x *SearchResponse) String() string {
 func (*SearchResponse) ProtoMessage() {}
 
 func (x *SearchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_coordinator_proto_msgTypes[7]
+	mi := &file_coordinator_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -407,7 +418,7 @@ func (x *SearchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchResponse.ProtoReflect.Descriptor instead.
 func (*SearchResponse) Descriptor() ([]byte, []int) {
-	return file_proto_coordinator_proto_rawDescGZIP(), []int{7}
+	return file_coordinator_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *SearchResponse) GetResults() []*ScoredKey {
@@ -431,11 +442,11 @@ func (x *SearchResponse) GetShardsFailed() uint32 {
 	return 0
 }
 
-var File_proto_coordinator_proto protoreflect.FileDescriptor
+var File_coordinator_proto protoreflect.FileDescriptor
 
-const file_proto_coordinator_proto_rawDesc = "" +
+const file_coordinator_proto_rawDesc = "" +
 	"\n" +
-	"\x17proto/coordinator.proto\x12\x1bvectorsearch.coordinator.v1\"8\n" +
+	"\x11coordinator.proto\x12\x1bvectorsearch.coordinator.v1\"8\n" +
 	"\x03Key\x12\x1b\n" +
 	"\tclient_id\x18\x01 \x01(\x04R\bclientId\x12\x14\n" +
 	"\x05label\x18\x02 \x01(\x04R\x05label\"[\n" +
@@ -448,12 +459,13 @@ const file_proto_coordinator_proto_rawDesc = "" +
 	"\x0eInsertResponse\"C\n" +
 	"\rDeleteRequest\x122\n" +
 	"\x03key\x18\x01 \x01(\v2 .vectorsearch.coordinator.v1.KeyR\x03key\"\x10\n" +
-	"\x0eDeleteResponse\"h\n" +
+	"\x0eDeleteResponse\"\x85\x01\n" +
 	"\rSearchRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x03(\x02R\x05query\x12\f\n" +
 	"\x01k\x18\x02 \x01(\rR\x01k\x12\x0e\n" +
 	"\x02ef\x18\x03 \x01(\rR\x02ef\x12#\n" +
-	"\rallow_partial\x18\x04 \x01(\bR\fallowPartial\"\x9e\x01\n" +
+	"\rallow_partial\x18\x04 \x01(\bR\fallowPartial\x12\x1b\n" +
+	"\tclient_id\x18\x05 \x01(\x04R\bclientId\"\x9e\x01\n" +
 	"\x0eSearchResponse\x12@\n" +
 	"\aresults\x18\x01 \x03(\v2&.vectorsearch.coordinator.v1.ScoredKeyR\aresults\x12%\n" +
 	"\x0eshards_queried\x18\x02 \x01(\rR\rshardsQueried\x12#\n" +
@@ -464,19 +476,19 @@ const file_proto_coordinator_proto_rawDesc = "" +
 	"\x06Search\x12*.vectorsearch.coordinator.v1.SearchRequest\x1a+.vectorsearch.coordinator.v1.SearchResponseBRZPgithub.com/Razeefshaik/vectorsearch-gateway/go/proto/coordinatorpb;coordinatorpbb\x06proto3"
 
 var (
-	file_proto_coordinator_proto_rawDescOnce sync.Once
-	file_proto_coordinator_proto_rawDescData []byte
+	file_coordinator_proto_rawDescOnce sync.Once
+	file_coordinator_proto_rawDescData []byte
 )
 
-func file_proto_coordinator_proto_rawDescGZIP() []byte {
-	file_proto_coordinator_proto_rawDescOnce.Do(func() {
-		file_proto_coordinator_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_coordinator_proto_rawDesc), len(file_proto_coordinator_proto_rawDesc)))
+func file_coordinator_proto_rawDescGZIP() []byte {
+	file_coordinator_proto_rawDescOnce.Do(func() {
+		file_coordinator_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_coordinator_proto_rawDesc), len(file_coordinator_proto_rawDesc)))
 	})
-	return file_proto_coordinator_proto_rawDescData
+	return file_coordinator_proto_rawDescData
 }
 
-var file_proto_coordinator_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
-var file_proto_coordinator_proto_goTypes = []any{
+var file_coordinator_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_coordinator_proto_goTypes = []any{
 	(*Key)(nil),            // 0: vectorsearch.coordinator.v1.Key
 	(*ScoredKey)(nil),      // 1: vectorsearch.coordinator.v1.ScoredKey
 	(*InsertRequest)(nil),  // 2: vectorsearch.coordinator.v1.InsertRequest
@@ -486,7 +498,7 @@ var file_proto_coordinator_proto_goTypes = []any{
 	(*SearchRequest)(nil),  // 6: vectorsearch.coordinator.v1.SearchRequest
 	(*SearchResponse)(nil), // 7: vectorsearch.coordinator.v1.SearchResponse
 }
-var file_proto_coordinator_proto_depIdxs = []int32{
+var file_coordinator_proto_depIdxs = []int32{
 	0, // 0: vectorsearch.coordinator.v1.ScoredKey.key:type_name -> vectorsearch.coordinator.v1.Key
 	0, // 1: vectorsearch.coordinator.v1.InsertRequest.key:type_name -> vectorsearch.coordinator.v1.Key
 	0, // 2: vectorsearch.coordinator.v1.DeleteRequest.key:type_name -> vectorsearch.coordinator.v1.Key
@@ -504,26 +516,26 @@ var file_proto_coordinator_proto_depIdxs = []int32{
 	0, // [0:4] is the sub-list for field type_name
 }
 
-func init() { file_proto_coordinator_proto_init() }
-func file_proto_coordinator_proto_init() {
-	if File_proto_coordinator_proto != nil {
+func init() { file_coordinator_proto_init() }
+func file_coordinator_proto_init() {
+	if File_coordinator_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_coordinator_proto_rawDesc), len(file_proto_coordinator_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_coordinator_proto_rawDesc), len(file_coordinator_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_coordinator_proto_goTypes,
-		DependencyIndexes: file_proto_coordinator_proto_depIdxs,
-		MessageInfos:      file_proto_coordinator_proto_msgTypes,
+		GoTypes:           file_coordinator_proto_goTypes,
+		DependencyIndexes: file_coordinator_proto_depIdxs,
+		MessageInfos:      file_coordinator_proto_msgTypes,
 	}.Build()
-	File_proto_coordinator_proto = out.File
-	file_proto_coordinator_proto_goTypes = nil
-	file_proto_coordinator_proto_depIdxs = nil
+	File_coordinator_proto = out.File
+	file_coordinator_proto_goTypes = nil
+	file_coordinator_proto_depIdxs = nil
 }

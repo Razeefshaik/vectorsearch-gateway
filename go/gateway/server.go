@@ -41,6 +41,7 @@ func (s *Server) Search(ctx context.Context, req *gatewaypb.GatewaySearchRequest
 		K:            req.K,
 		Ef:           req.Ef,
 		AllowPartial: req.AllowPartial,
+		ClientId:     req.ClientId,
 	})
 	if err != nil {
 		return nil, err
