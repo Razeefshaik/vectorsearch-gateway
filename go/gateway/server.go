@@ -25,7 +25,7 @@ func NewServer(coordinator coordinatorpb.VectorSearchClient, embed embedpb.Embed
 	return &Server{coordinator: coordinator, embed: embed, producer: producer, limiter: limiter}
 }
 
-func (s *Server) Search(ctx context.Context, req *gatewaypb.GatewaySearchRequest) (*coordinatorpb.SearchResponse, error) {
+func (s *Server) Search(ctx context.Context, req *gatewaypb.GatewaySearchRequest) (*gatewaypb.GatewaySearchResponse, error) {
 	clientID := strconv.FormatUint(req.ClientId, 10)
 	if !s.limiter.Allow(clientID) {
 		return nil, status.Error(codes.ResourceExhausted, "rate limit exceeded")
@@ -36,12 +36,32 @@ func (s *Server) Search(ctx context.Context, req *gatewaypb.GatewaySearchRequest
 		return nil, err
 	}
 
-	return s.coordinator.Search(ctx, &coordinatorpb.SearchRequest{
+	coordResp, err := s.coordinator.Search(ctx, &coordinatorpb.SearchRequest{
 		Query:        embedResp.Vector,
 		K:            req.K,
 		Ef:           req.Ef,
 		AllowPartial: req.AllowPartial,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]*gatewaypb.GatewayScoredResult, len(coordResp.Results))
+	for i, r := range coordResp.Results {
+		results[i] = &gatewaypb.GatewayScoredResult{
+			Key: &gatewaypb.GatewayKey{
+				ClientId: r.Key.ClientId,
+				Label:    r.Key.Label,
+			},
+			Distance: r.Distance,
+		}
+	}
+
+	return &gatewaypb.GatewaySearchResponse{
+		Results:       results,
+		ShardsQueried: coordResp.ShardsQueried,
+		ShardsFailed:  coordResp.ShardsFailed,
+	}, nil
 }
 
 func (s *Server) Insert(ctx context.Context, req *gatewaypb.GatewayInsertRequest) (*gatewaypb.GatewayInsertResponse, error) {
@@ -51,7 +71,10 @@ func (s *Server) Insert(ctx context.Context, req *gatewaypb.GatewayInsertRequest
 	}
 
 	event := &ingestpb.IngestEvent{
-		Key:     req.Key,
+		Key: &coordinatorpb.Key{
+			ClientId: req.Key.ClientId,
+			Label:    req.Key.Label,
+		},
 		Content: req.Text,
 	}
 

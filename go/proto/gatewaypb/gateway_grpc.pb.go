@@ -8,7 +8,6 @@ package gatewaypb
 
 import (
 	context "context"
-	coordinatorpb "github.com/Razeefshaik/vectorsearch-gateway/go/proto/coordinatorpb"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -30,8 +29,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GatewayClient interface {
 	Insert(ctx context.Context, in *GatewayInsertRequest, opts ...grpc.CallOption) (*GatewayInsertResponse, error)
-	Search(ctx context.Context, in *GatewaySearchRequest, opts ...grpc.CallOption) (*coordinatorpb.SearchResponse, error)
-	Delete(ctx context.Context, in *coordinatorpb.DeleteRequest, opts ...grpc.CallOption) (*coordinatorpb.DeleteResponse, error)
+	Search(ctx context.Context, in *GatewaySearchRequest, opts ...grpc.CallOption) (*GatewaySearchResponse, error)
+	Delete(ctx context.Context, in *GatewayDeleteRequest, opts ...grpc.CallOption) (*GatewayDeleteResponse, error)
 }
 
 type gatewayClient struct {
@@ -52,9 +51,9 @@ func (c *gatewayClient) Insert(ctx context.Context, in *GatewayInsertRequest, op
 	return out, nil
 }
 
-func (c *gatewayClient) Search(ctx context.Context, in *GatewaySearchRequest, opts ...grpc.CallOption) (*coordinatorpb.SearchResponse, error) {
+func (c *gatewayClient) Search(ctx context.Context, in *GatewaySearchRequest, opts ...grpc.CallOption) (*GatewaySearchResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(coordinatorpb.SearchResponse)
+	out := new(GatewaySearchResponse)
 	err := c.cc.Invoke(ctx, Gateway_Search_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -62,9 +61,9 @@ func (c *gatewayClient) Search(ctx context.Context, in *GatewaySearchRequest, op
 	return out, nil
 }
 
-func (c *gatewayClient) Delete(ctx context.Context, in *coordinatorpb.DeleteRequest, opts ...grpc.CallOption) (*coordinatorpb.DeleteResponse, error) {
+func (c *gatewayClient) Delete(ctx context.Context, in *GatewayDeleteRequest, opts ...grpc.CallOption) (*GatewayDeleteResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(coordinatorpb.DeleteResponse)
+	out := new(GatewayDeleteResponse)
 	err := c.cc.Invoke(ctx, Gateway_Delete_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -77,8 +76,8 @@ func (c *gatewayClient) Delete(ctx context.Context, in *coordinatorpb.DeleteRequ
 // for forward compatibility.
 type GatewayServer interface {
 	Insert(context.Context, *GatewayInsertRequest) (*GatewayInsertResponse, error)
-	Search(context.Context, *GatewaySearchRequest) (*coordinatorpb.SearchResponse, error)
-	Delete(context.Context, *coordinatorpb.DeleteRequest) (*coordinatorpb.DeleteResponse, error)
+	Search(context.Context, *GatewaySearchRequest) (*GatewaySearchResponse, error)
+	Delete(context.Context, *GatewayDeleteRequest) (*GatewayDeleteResponse, error)
 	mustEmbedUnimplementedGatewayServer()
 }
 
@@ -92,10 +91,10 @@ type UnimplementedGatewayServer struct{}
 func (UnimplementedGatewayServer) Insert(context.Context, *GatewayInsertRequest) (*GatewayInsertResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Insert not implemented")
 }
-func (UnimplementedGatewayServer) Search(context.Context, *GatewaySearchRequest) (*coordinatorpb.SearchResponse, error) {
+func (UnimplementedGatewayServer) Search(context.Context, *GatewaySearchRequest) (*GatewaySearchResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Search not implemented")
 }
-func (UnimplementedGatewayServer) Delete(context.Context, *coordinatorpb.DeleteRequest) (*coordinatorpb.DeleteResponse, error) {
+func (UnimplementedGatewayServer) Delete(context.Context, *GatewayDeleteRequest) (*GatewayDeleteResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Delete not implemented")
 }
 func (UnimplementedGatewayServer) mustEmbedUnimplementedGatewayServer() {}
@@ -156,7 +155,7 @@ func _Gateway_Search_Handler(srv interface{}, ctx context.Context, dec func(inte
 }
 
 func _Gateway_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(coordinatorpb.DeleteRequest)
+	in := new(GatewayDeleteRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -168,7 +167,7 @@ func _Gateway_Delete_Handler(srv interface{}, ctx context.Context, dec func(inte
 		FullMethod: Gateway_Delete_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GatewayServer).Delete(ctx, req.(*coordinatorpb.DeleteRequest))
+		return srv.(GatewayServer).Delete(ctx, req.(*GatewayDeleteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
