@@ -95,18 +95,23 @@ failing.
 
 ## 3. Proto contracts
 
-Four `.proto` files, one Go package per file (`<name>pb`), imports flow one
-direction only: `gateway.proto` and `ingest.proto` import `coordinator.proto`;
-`embed.proto` stands alone.
+Four `.proto` files, one Go package per file (`<name>pb`). Only `ingest.proto`
+imports `coordinator.proto` now — that's an internal wire format between two
+of this repo's own Go binaries (`gatewayd`'s producer and `consumer`), not
+something a caller of `Gateway` ever sees. `gateway.proto` is deliberately
+self-contained: it defines its own `GatewayKey` / `GatewayScoredResult` /
+`GatewaySearchResponse` instead of returning or embedding the coordinator's
+types directly, so any client of `Gateway` — Java, Go, whatever — only ever
+needs to compile `gateway.proto`, never `coordinator.proto`. `Server` (in
+`go/gateway/server.go`) converts between the two internally.
 
 ```mermaid
 flowchart TD
     coordinator["coordinator.proto\npackage vectorsearch.coordinator.v1\nservice VectorSearch"]
-    gateway["gateway.proto\npackage vectorsearch.gateway.v1\nservice Gateway"]
+    gateway["gateway.proto\npackage vectorsearch.gateway.v1\nservice Gateway\n(no imports — self-contained)"]
     ingest["ingest.proto\npackage vectorsearch.ingest.v1\n(message only, no service)"]
     embed["embed.proto\npackage embed\nservice EmbedService"]
 
-    gateway -->|imports| coordinator
     ingest -->|imports| coordinator
 ```
 
@@ -143,8 +148,18 @@ vector (used to correlate a later `Delete` back to what was inserted).
 ```proto
 service Gateway {
   rpc Insert(GatewayInsertRequest) returns (GatewayInsertResponse);
-  rpc Search(GatewaySearchRequest) returns (vectorsearch.coordinator.v1.SearchResponse);
-  rpc Delete(vectorsearch.coordinator.v1.DeleteRequest) returns (vectorsearch.coordinator.v1.DeleteResponse);
+  rpc Search(GatewaySearchRequest) returns (GatewaySearchResponse);
+  rpc Delete(GatewayDeleteRequest) returns (GatewayDeleteResponse);
+}
+
+message GatewayKey {
+  uint64 client_id = 1;
+  uint64 label     = 2;
+}
+
+message GatewayScoredResult {
+  GatewayKey key      = 1;
+  float      distance = 2;
 }
 
 message GatewaySearchRequest {
@@ -155,15 +170,28 @@ message GatewaySearchRequest {
   uint64 client_id = 5;   // added so Search can be rate-limited per caller
 }
 
+message GatewaySearchResponse {
+  repeated GatewayScoredResult results = 1;
+  uint32 shards_queried = 2;
+  uint32 shards_failed  = 3;
+}
+
 message GatewayInsertRequest {
-  vectorsearch.coordinator.v1.Key key = 1;
+  GatewayKey key = 1;
   string text = 2;
 }
 message GatewayInsertResponse {}
+
+message GatewayDeleteRequest  { GatewayKey key = 1; }
+message GatewayDeleteResponse {}
 ```
 
 Callers never send raw vectors — only text. `gatewayd` is what turns text
-into the `vector`/`query` fields the coordinator actually needs.
+into the `vector`/`query` fields the coordinator actually needs. `GatewayKey`,
+`GatewayScoredResult`, and `GatewaySearchResponse` mirror the coordinator's
+`Key`/`ScoredKey`/`SearchResponse` field-for-field, but are gateway-owned
+types — `Server.Search` and `Server.Insert` translate between the two so the
+coordinator's proto contract stays an internal implementation detail (see §4).
 
 ### `ingest.proto` — the Kafka payload
 
@@ -226,9 +254,11 @@ sequenceDiagram
     end
 ```
 
-Note the response type: `Gateway.Search` returns
-`vectorsearch.coordinator.v1.SearchResponse` directly — the gateway does not
-wrap or reshape the coordinator's response, it passes it straight through.
+Note the response type: `Gateway.Search` returns the gateway's own
+`GatewaySearchResponse`, not the coordinator's `SearchResponse` — `Server`
+converts each `coordinatorpb.ScoredKey` into a `gatewaypb.GatewayScoredResult`
+before replying, so a caller of `Gateway` never needs to know
+`coordinator.proto` exists.
 
 ---
 

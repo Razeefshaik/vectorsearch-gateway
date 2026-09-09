@@ -7,7 +7,6 @@
 package gatewaypb
 
 import (
-	coordinatorpb "github.com/Razeefshaik/vectorsearch-gateway/go/proto/coordinatorpb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -22,6 +21,110 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type GatewayKey struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ClientId      uint64                 `protobuf:"varint,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
+	Label         uint64                 `protobuf:"varint,2,opt,name=label,proto3" json:"label,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GatewayKey) Reset() {
+	*x = GatewayKey{}
+	mi := &file_gateway_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GatewayKey) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GatewayKey) ProtoMessage() {}
+
+func (x *GatewayKey) ProtoReflect() protoreflect.Message {
+	mi := &file_gateway_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GatewayKey.ProtoReflect.Descriptor instead.
+func (*GatewayKey) Descriptor() ([]byte, []int) {
+	return file_gateway_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *GatewayKey) GetClientId() uint64 {
+	if x != nil {
+		return x.ClientId
+	}
+	return 0
+}
+
+func (x *GatewayKey) GetLabel() uint64 {
+	if x != nil {
+		return x.Label
+	}
+	return 0
+}
+
+type GatewayScoredResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           *GatewayKey            `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Distance      float32                `protobuf:"fixed32,2,opt,name=distance,proto3" json:"distance,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GatewayScoredResult) Reset() {
+	*x = GatewayScoredResult{}
+	mi := &file_gateway_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GatewayScoredResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GatewayScoredResult) ProtoMessage() {}
+
+func (x *GatewayScoredResult) ProtoReflect() protoreflect.Message {
+	mi := &file_gateway_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GatewayScoredResult.ProtoReflect.Descriptor instead.
+func (*GatewayScoredResult) Descriptor() ([]byte, []int) {
+	return file_gateway_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GatewayScoredResult) GetKey() *GatewayKey {
+	if x != nil {
+		return x.Key
+	}
+	return nil
+}
+
+func (x *GatewayScoredResult) GetDistance() float32 {
+	if x != nil {
+		return x.Distance
+	}
+	return 0
+}
+
 type GatewaySearchRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
@@ -35,7 +138,7 @@ type GatewaySearchRequest struct {
 
 func (x *GatewaySearchRequest) Reset() {
 	*x = GatewaySearchRequest{}
-	mi := &file_gateway_proto_msgTypes[0]
+	mi := &file_gateway_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -47,7 +150,7 @@ func (x *GatewaySearchRequest) String() string {
 func (*GatewaySearchRequest) ProtoMessage() {}
 
 func (x *GatewaySearchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gateway_proto_msgTypes[0]
+	mi := &file_gateway_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -60,7 +163,7 @@ func (x *GatewaySearchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GatewaySearchRequest.ProtoReflect.Descriptor instead.
 func (*GatewaySearchRequest) Descriptor() ([]byte, []int) {
-	return file_gateway_proto_rawDescGZIP(), []int{0}
+	return file_gateway_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GatewaySearchRequest) GetText() string {
@@ -98,9 +201,71 @@ func (x *GatewaySearchRequest) GetClientId() uint64 {
 	return 0
 }
 
+type GatewaySearchResponse struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Results []*GatewayScoredResult `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+	// Passed through from the coordinator's own SearchResponse so degradation
+	// is never silent here either.
+	ShardsQueried uint32 `protobuf:"varint,2,opt,name=shards_queried,json=shardsQueried,proto3" json:"shards_queried,omitempty"`
+	ShardsFailed  uint32 `protobuf:"varint,3,opt,name=shards_failed,json=shardsFailed,proto3" json:"shards_failed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GatewaySearchResponse) Reset() {
+	*x = GatewaySearchResponse{}
+	mi := &file_gateway_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GatewaySearchResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GatewaySearchResponse) ProtoMessage() {}
+
+func (x *GatewaySearchResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_gateway_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GatewaySearchResponse.ProtoReflect.Descriptor instead.
+func (*GatewaySearchResponse) Descriptor() ([]byte, []int) {
+	return file_gateway_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GatewaySearchResponse) GetResults() []*GatewayScoredResult {
+	if x != nil {
+		return x.Results
+	}
+	return nil
+}
+
+func (x *GatewaySearchResponse) GetShardsQueried() uint32 {
+	if x != nil {
+		return x.ShardsQueried
+	}
+	return 0
+}
+
+func (x *GatewaySearchResponse) GetShardsFailed() uint32 {
+	if x != nil {
+		return x.ShardsFailed
+	}
+	return 0
+}
+
 type GatewayInsertRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Key           *coordinatorpb.Key     `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Key           *GatewayKey            `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	Text          string                 `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -108,7 +273,7 @@ type GatewayInsertRequest struct {
 
 func (x *GatewayInsertRequest) Reset() {
 	*x = GatewayInsertRequest{}
-	mi := &file_gateway_proto_msgTypes[1]
+	mi := &file_gateway_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -120,7 +285,7 @@ func (x *GatewayInsertRequest) String() string {
 func (*GatewayInsertRequest) ProtoMessage() {}
 
 func (x *GatewayInsertRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gateway_proto_msgTypes[1]
+	mi := &file_gateway_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -133,10 +298,10 @@ func (x *GatewayInsertRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GatewayInsertRequest.ProtoReflect.Descriptor instead.
 func (*GatewayInsertRequest) Descriptor() ([]byte, []int) {
-	return file_gateway_proto_rawDescGZIP(), []int{1}
+	return file_gateway_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *GatewayInsertRequest) GetKey() *coordinatorpb.Key {
+func (x *GatewayInsertRequest) GetKey() *GatewayKey {
 	if x != nil {
 		return x.Key
 	}
@@ -158,7 +323,7 @@ type GatewayInsertResponse struct {
 
 func (x *GatewayInsertResponse) Reset() {
 	*x = GatewayInsertResponse{}
-	mi := &file_gateway_proto_msgTypes[2]
+	mi := &file_gateway_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -170,7 +335,7 @@ func (x *GatewayInsertResponse) String() string {
 func (*GatewayInsertResponse) ProtoMessage() {}
 
 func (x *GatewayInsertResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gateway_proto_msgTypes[2]
+	mi := &file_gateway_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -183,28 +348,122 @@ func (x *GatewayInsertResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GatewayInsertResponse.ProtoReflect.Descriptor instead.
 func (*GatewayInsertResponse) Descriptor() ([]byte, []int) {
-	return file_gateway_proto_rawDescGZIP(), []int{2}
+	return file_gateway_proto_rawDescGZIP(), []int{5}
+}
+
+type GatewayDeleteRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           *GatewayKey            `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GatewayDeleteRequest) Reset() {
+	*x = GatewayDeleteRequest{}
+	mi := &file_gateway_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GatewayDeleteRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GatewayDeleteRequest) ProtoMessage() {}
+
+func (x *GatewayDeleteRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_gateway_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GatewayDeleteRequest.ProtoReflect.Descriptor instead.
+func (*GatewayDeleteRequest) Descriptor() ([]byte, []int) {
+	return file_gateway_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GatewayDeleteRequest) GetKey() *GatewayKey {
+	if x != nil {
+		return x.Key
+	}
+	return nil
+}
+
+type GatewayDeleteResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GatewayDeleteResponse) Reset() {
+	*x = GatewayDeleteResponse{}
+	mi := &file_gateway_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GatewayDeleteResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GatewayDeleteResponse) ProtoMessage() {}
+
+func (x *GatewayDeleteResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_gateway_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GatewayDeleteResponse.ProtoReflect.Descriptor instead.
+func (*GatewayDeleteResponse) Descriptor() ([]byte, []int) {
+	return file_gateway_proto_rawDescGZIP(), []int{7}
 }
 
 var File_gateway_proto protoreflect.FileDescriptor
 
 const file_gateway_proto_rawDesc = "" +
 	"\n" +
-	"\rgateway.proto\x12\x17vectorsearch.gateway.v1\x1a\x11coordinator.proto\"\x8a\x01\n" +
+	"\rgateway.proto\x12\x17vectorsearch.gateway.v1\"?\n" +
+	"\n" +
+	"GatewayKey\x12\x1b\n" +
+	"\tclient_id\x18\x01 \x01(\x04R\bclientId\x12\x14\n" +
+	"\x05label\x18\x02 \x01(\x04R\x05label\"h\n" +
+	"\x13GatewayScoredResult\x125\n" +
+	"\x03key\x18\x01 \x01(\v2#.vectorsearch.gateway.v1.GatewayKeyR\x03key\x12\x1a\n" +
+	"\bdistance\x18\x02 \x01(\x02R\bdistance\"\x8a\x01\n" +
 	"\x14GatewaySearchRequest\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\f\n" +
 	"\x01k\x18\x02 \x01(\rR\x01k\x12\x0e\n" +
 	"\x02ef\x18\x03 \x01(\rR\x02ef\x12#\n" +
 	"\rallow_partial\x18\x04 \x01(\bR\fallowPartial\x12\x1b\n" +
-	"\tclient_id\x18\x05 \x01(\x04R\bclientId\"^\n" +
-	"\x14GatewayInsertRequest\x122\n" +
-	"\x03key\x18\x01 \x01(\v2 .vectorsearch.coordinator.v1.KeyR\x03key\x12\x12\n" +
+	"\tclient_id\x18\x05 \x01(\x04R\bclientId\"\xab\x01\n" +
+	"\x15GatewaySearchResponse\x12F\n" +
+	"\aresults\x18\x01 \x03(\v2,.vectorsearch.gateway.v1.GatewayScoredResultR\aresults\x12%\n" +
+	"\x0eshards_queried\x18\x02 \x01(\rR\rshardsQueried\x12#\n" +
+	"\rshards_failed\x18\x03 \x01(\rR\fshardsFailed\"a\n" +
+	"\x14GatewayInsertRequest\x125\n" +
+	"\x03key\x18\x01 \x01(\v2#.vectorsearch.gateway.v1.GatewayKeyR\x03key\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\"\x17\n" +
-	"\x15GatewayInsertResponse2\xbb\x02\n" +
+	"\x15GatewayInsertResponse\"M\n" +
+	"\x14GatewayDeleteRequest\x125\n" +
+	"\x03key\x18\x01 \x01(\v2#.vectorsearch.gateway.v1.GatewayKeyR\x03key\"\x17\n" +
+	"\x15GatewayDeleteResponse2\xc4\x02\n" +
 	"\aGateway\x12g\n" +
-	"\x06Insert\x12-.vectorsearch.gateway.v1.GatewayInsertRequest\x1a..vectorsearch.gateway.v1.GatewayInsertResponse\x12d\n" +
-	"\x06Search\x12-.vectorsearch.gateway.v1.GatewaySearchRequest\x1a+.vectorsearch.coordinator.v1.SearchResponse\x12a\n" +
-	"\x06Delete\x12*.vectorsearch.coordinator.v1.DeleteRequest\x1a+.vectorsearch.coordinator.v1.DeleteResponseBJZHgithub.com/Razeefshaik/vectorsearch-gateway/go/proto/gatewaypb;gatewaypbb\x06proto3"
+	"\x06Insert\x12-.vectorsearch.gateway.v1.GatewayInsertRequest\x1a..vectorsearch.gateway.v1.GatewayInsertResponse\x12g\n" +
+	"\x06Search\x12-.vectorsearch.gateway.v1.GatewaySearchRequest\x1a..vectorsearch.gateway.v1.GatewaySearchResponse\x12g\n" +
+	"\x06Delete\x12-.vectorsearch.gateway.v1.GatewayDeleteRequest\x1a..vectorsearch.gateway.v1.GatewayDeleteResponseBJZHgithub.com/Razeefshaik/vectorsearch-gateway/go/proto/gatewaypb;gatewaypbb\x06proto3"
 
 var (
 	file_gateway_proto_rawDescOnce sync.Once
@@ -218,29 +477,33 @@ func file_gateway_proto_rawDescGZIP() []byte {
 	return file_gateway_proto_rawDescData
 }
 
-var file_gateway_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_gateway_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_gateway_proto_goTypes = []any{
-	(*GatewaySearchRequest)(nil),         // 0: vectorsearch.gateway.v1.GatewaySearchRequest
-	(*GatewayInsertRequest)(nil),         // 1: vectorsearch.gateway.v1.GatewayInsertRequest
-	(*GatewayInsertResponse)(nil),        // 2: vectorsearch.gateway.v1.GatewayInsertResponse
-	(*coordinatorpb.Key)(nil),            // 3: vectorsearch.coordinator.v1.Key
-	(*coordinatorpb.DeleteRequest)(nil),  // 4: vectorsearch.coordinator.v1.DeleteRequest
-	(*coordinatorpb.SearchResponse)(nil), // 5: vectorsearch.coordinator.v1.SearchResponse
-	(*coordinatorpb.DeleteResponse)(nil), // 6: vectorsearch.coordinator.v1.DeleteResponse
+	(*GatewayKey)(nil),            // 0: vectorsearch.gateway.v1.GatewayKey
+	(*GatewayScoredResult)(nil),   // 1: vectorsearch.gateway.v1.GatewayScoredResult
+	(*GatewaySearchRequest)(nil),  // 2: vectorsearch.gateway.v1.GatewaySearchRequest
+	(*GatewaySearchResponse)(nil), // 3: vectorsearch.gateway.v1.GatewaySearchResponse
+	(*GatewayInsertRequest)(nil),  // 4: vectorsearch.gateway.v1.GatewayInsertRequest
+	(*GatewayInsertResponse)(nil), // 5: vectorsearch.gateway.v1.GatewayInsertResponse
+	(*GatewayDeleteRequest)(nil),  // 6: vectorsearch.gateway.v1.GatewayDeleteRequest
+	(*GatewayDeleteResponse)(nil), // 7: vectorsearch.gateway.v1.GatewayDeleteResponse
 }
 var file_gateway_proto_depIdxs = []int32{
-	3, // 0: vectorsearch.gateway.v1.GatewayInsertRequest.key:type_name -> vectorsearch.coordinator.v1.Key
-	1, // 1: vectorsearch.gateway.v1.Gateway.Insert:input_type -> vectorsearch.gateway.v1.GatewayInsertRequest
-	0, // 2: vectorsearch.gateway.v1.Gateway.Search:input_type -> vectorsearch.gateway.v1.GatewaySearchRequest
-	4, // 3: vectorsearch.gateway.v1.Gateway.Delete:input_type -> vectorsearch.coordinator.v1.DeleteRequest
-	2, // 4: vectorsearch.gateway.v1.Gateway.Insert:output_type -> vectorsearch.gateway.v1.GatewayInsertResponse
-	5, // 5: vectorsearch.gateway.v1.Gateway.Search:output_type -> vectorsearch.coordinator.v1.SearchResponse
-	6, // 6: vectorsearch.gateway.v1.Gateway.Delete:output_type -> vectorsearch.coordinator.v1.DeleteResponse
-	4, // [4:7] is the sub-list for method output_type
-	1, // [1:4] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // 0: vectorsearch.gateway.v1.GatewayScoredResult.key:type_name -> vectorsearch.gateway.v1.GatewayKey
+	1, // 1: vectorsearch.gateway.v1.GatewaySearchResponse.results:type_name -> vectorsearch.gateway.v1.GatewayScoredResult
+	0, // 2: vectorsearch.gateway.v1.GatewayInsertRequest.key:type_name -> vectorsearch.gateway.v1.GatewayKey
+	0, // 3: vectorsearch.gateway.v1.GatewayDeleteRequest.key:type_name -> vectorsearch.gateway.v1.GatewayKey
+	4, // 4: vectorsearch.gateway.v1.Gateway.Insert:input_type -> vectorsearch.gateway.v1.GatewayInsertRequest
+	2, // 5: vectorsearch.gateway.v1.Gateway.Search:input_type -> vectorsearch.gateway.v1.GatewaySearchRequest
+	6, // 6: vectorsearch.gateway.v1.Gateway.Delete:input_type -> vectorsearch.gateway.v1.GatewayDeleteRequest
+	5, // 7: vectorsearch.gateway.v1.Gateway.Insert:output_type -> vectorsearch.gateway.v1.GatewayInsertResponse
+	3, // 8: vectorsearch.gateway.v1.Gateway.Search:output_type -> vectorsearch.gateway.v1.GatewaySearchResponse
+	7, // 9: vectorsearch.gateway.v1.Gateway.Delete:output_type -> vectorsearch.gateway.v1.GatewayDeleteResponse
+	7, // [7:10] is the sub-list for method output_type
+	4, // [4:7] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_gateway_proto_init() }
@@ -254,7 +517,7 @@ func file_gateway_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_gateway_proto_rawDesc), len(file_gateway_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
