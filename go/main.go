@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net"
-	"os"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -11,6 +10,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	gatewayd "github.com/Razeefshaik/vectorsearch-gateway/go/gateway"
+	"github.com/Razeefshaik/vectorsearch-gateway/go/internal/config"
+	"github.com/Razeefshaik/vectorsearch-gateway/go/internal/observability"
 	coordinatorpb "github.com/Razeefshaik/vectorsearch-gateway/go/proto/coordinatorpb"
 	embedpb "github.com/Razeefshaik/vectorsearch-gateway/go/proto/embedpb"
 	gatewaypb "github.com/Razeefshaik/vectorsearch-gateway/go/proto/gatewaypb"
@@ -22,14 +23,19 @@ func main() {
 		log.Printf("warning: could not load .env file: %v", err)
 	}
 
-	coordinatorAddr := os.Getenv("COORDINATOR_ADDR")
-	// .env only defines the embed services' ports; gatewayd runs on the host
-	// alongside them, so the port is combined with localhost to form the addr.
-	embedSearchAddr := "localhost:" + os.Getenv("EMBED_SEARCH_PORT")
-	embedIngestAddr := "localhost:" + os.Getenv("EMBED_INGEST_PORT")
-	kafkaBroker := os.Getenv("KAFKA_BROKER")
-	ingestTopic := os.Getenv("INGEST_TOPIC")
-	gatewaydPort := os.Getenv("GATEWAYD_PORT")
+	coordinatorAddr := config.Getenv("COORDINATOR_ADDR", "localhost:50052")
+	// EMBED_SEARCH_ADDR / EMBED_INGEST_ADDR let docker-compose point these at
+	// container service names; local/hybrid dev only sets the *_PORT vars,
+	// so it falls back to localhost:<port>.
+	embedSearchAddr := config.AddrOrLocalPort("EMBED_SEARCH_ADDR", "EMBED_SEARCH_PORT")
+	embedIngestAddr := config.AddrOrLocalPort("EMBED_INGEST_ADDR", "EMBED_INGEST_PORT")
+	kafkaBroker := config.Getenv("KAFKA_BROKER", "localhost:9092")
+	ingestTopic := config.Getenv("INGEST_TOPIC", "ingest-events")
+	gatewaydPort := config.Getenv("GATEWAYD_PORT", "50053")
+	metricsAddr := ":" + config.Getenv("GATEWAYD_METRICS_PORT", "9101")
+
+	metricsSrv := observability.StartServer(metricsAddr, "gatewayd")
+	defer observability.Shutdown(metricsSrv)
 
 	coordinatorConn, err := grpc.NewClient(coordinatorAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -61,10 +67,11 @@ func main() {
 		log.Fatalf("failed to listen on port %s: %v", gatewaydPort, err)
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcMetrics := observability.NewGRPCServerMetrics("vsgw_gatewayd")
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(grpcMetrics.UnaryInterceptor()))
 	gatewaypb.RegisterGatewayServer(grpcServer, server)
 
-	log.Printf("gatewayd listening on :%s", gatewaydPort)
+	log.Printf("gatewayd listening on :%s (metrics on %s)", gatewaydPort, metricsAddr)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

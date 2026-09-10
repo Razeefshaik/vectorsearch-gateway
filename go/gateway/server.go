@@ -9,9 +9,21 @@ import (
 	gatewaypb "github.com/Razeefshaik/vectorsearch-gateway/go/proto/gatewaypb"
 	ingestpb "github.com/Razeefshaik/vectorsearch-gateway/go/proto/ingestpb"
 	"github.com/Razeefshaik/vectorsearch-gateway/go/ratelimiter"
+	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+var ratelimitDeniedTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "vsgw_gatewayd",
+	Subsystem: "ratelimiter",
+	Name:      "denied_total",
+	Help:      "Requests rejected by the per-client rate limiter, by RPC method.",
+}, []string{"method"})
+
+func init() {
+	prometheus.MustRegister(ratelimitDeniedTotal)
+}
 
 type Server struct {
 	gatewaypb.UnimplementedGatewayServer
@@ -28,6 +40,7 @@ func NewServer(coordinator coordinatorpb.VectorSearchClient, embed embedpb.Embed
 func (s *Server) Search(ctx context.Context, req *gatewaypb.GatewaySearchRequest) (*gatewaypb.GatewaySearchResponse, error) {
 	clientID := strconv.FormatUint(req.ClientId, 10)
 	if !s.limiter.Allow(clientID) {
+		ratelimitDeniedTotal.WithLabelValues("Search").Inc()
 		return nil, status.Error(codes.ResourceExhausted, "rate limit exceeded")
 	}
 
@@ -67,6 +80,7 @@ func (s *Server) Search(ctx context.Context, req *gatewaypb.GatewaySearchRequest
 func (s *Server) Insert(ctx context.Context, req *gatewaypb.GatewayInsertRequest) (*gatewaypb.GatewayInsertResponse, error) {
 	clientID := strconv.FormatUint(req.Key.ClientId, 10)
 	if !s.limiter.Allow(clientID) {
+		ratelimitDeniedTotal.WithLabelValues("Insert").Inc()
 		return nil, status.Error(codes.ResourceExhausted, "rate limit exceeded")
 	}
 

@@ -1,0 +1,25 @@
+# gatewayd — public gRPC entrypoint. Built as a small statically-linked
+# binary on an alpine runtime (not scratch) so the HEALTHCHECK below can
+# use wget without adding a separate healthcheck binary to the image.
+FROM golang:1.26-alpine AS builder
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/gatewayd .
+
+FROM alpine:3.20
+RUN adduser -D -u 10001 appuser
+WORKDIR /app
+COPY --from=builder /out/gatewayd /app/gatewayd
+USER appuser
+
+# gRPC port and metrics/health port are both configurable via env
+# (GATEWAYD_PORT, GATEWAYD_METRICS_PORT); these EXPOSE lines document the
+# defaults from .env, they don't hardcode runtime behavior.
+EXPOSE 50053 9101
+
+HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget -qO- "http://localhost:${GATEWAYD_METRICS_PORT:-9101}/healthz" || exit 1
+
+ENTRYPOINT ["/app/gatewayd"]

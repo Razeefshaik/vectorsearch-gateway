@@ -1,0 +1,187 @@
+# Alert rules for vectorsearch-gateway. Grouped by the failure mode they
+# detect, not by service -- most incidents in this system show up as a
+# symptom in one place (e.g. rising Search latency) caused by a problem in
+# another (embed-search saturated). Thresholds are starting points, not
+# tuned SLOs -- adjust `for:` durations and comparison values once you have
+# real traffic baselines.
+groups:
+  - name: service-availability
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} is down"
+          description: "Prometheus has not been able to scrape {{ $labels.job }} ({{ $labels.instance }}) for over a minute. Its gRPC traffic is almost certainly failing too."
+
+  - name: gatewayd
+    rules:
+      - alert: GatewaydHighErrorRate
+        expr: |
+          sum(rate(vsgw_gatewayd_grpc_requests_total{code!="OK"}[5m])) by (method)
+          /
+          sum(rate(vsgw_gatewayd_grpc_requests_total[5m])) by (method)
+          > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "gatewayd {{ $labels.method }} error rate above 5%"
+          description: "More than 5% of {{ $labels.method }} calls have returned a non-OK status over the last 5 minutes. Check gatewayd logs and whether embed-search/coordinator are healthy."
+
+      - alert: GatewaydHighLatencyP99
+        expr: |
+          histogram_quantile(0.99, sum(rate(vsgw_gatewayd_grpc_request_duration_seconds_bucket[5m])) by (le, method))
+          > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "gatewayd {{ $labels.method }} p99 latency above 2s"
+          description: "p99 latency for {{ $labels.method }} has been above 2 seconds for 5 minutes. For Search this usually means embed-search or the coordinator is slow; for Insert it usually means Kafka is slow to ack."
+
+      - alert: GatewaydRateLimitSpike
+        expr: sum(rate(vsgw_gatewayd_ratelimiter_denied_total[5m])) > 5
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "Rate limiter rejecting more than 5 req/s"
+          description: "Clients are being throttled at a sustained rate. Could be one noisy client, or capacity (token bucket size/refill rate) that's now too low for real traffic."
+
+      - alert: GatewaydKafkaPublishErrors
+        expr: increase(vsgw_gatewayd_kafka_publish_total{result!="success"}[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "gatewayd failing to publish to Kafka"
+          description: "Insert requests are succeeding at the gRPC layer only if Publish succeeds -- any publish error here means accepted inserts are being lost, not just delayed. Check Kafka broker health."
+
+  - name: consumer
+    rules:
+      - alert: ConsumerStalled
+        expr: |
+          increase(vsgw_consumer_messages_consumed_total[10m]) == 0
+          and
+          sum(kafka_consumergroup_lag) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Consumer has stopped making progress"
+          description: "No messages have been fetched in 10 minutes while consumer lag is non-zero. The consumer process may be stuck or crashed -- check `docker compose logs consumer`."
+
+      - alert: ConsumerHighTransientErrorRate
+        expr: |
+          sum(rate(vsgw_consumer_messages_processed_total{outcome="transient_error"}[5m]))
+          /
+          sum(rate(vsgw_consumer_messages_processed_total[5m]))
+          > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Over 10% of ingest events hitting transient errors"
+          description: "These events are not being committed and will be redelivered, but a sustained rate this high usually means embed-ingest or the coordinator is degraded, not a one-off blip."
+
+      - alert: ConsumerGroupLagGrowing
+        expr: sum(kafka_consumergroup_lag{consumergroup=~".*ingest.*"}) > 1000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Ingest consumer lag above 1000 messages"
+          description: "The consumer is falling behind the producer. Either scale up consumer replicas (same CONSUMER_GROUP, more instances -- Kafka will rebalance partitions across them) or investigate why processing is slow."
+
+  - name: embed-service
+    rules:
+      - alert: EmbedHighLatencyP95
+        expr: histogram_quantile(0.95, sum(rate(vsgw_embed_request_duration_seconds_bucket[5m])) by (le, job)) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} p95 embed latency above 1s"
+          description: "The embedding model is taking over a second per request at p95. Check CPU throttling/resource limits on {{ $labels.job }}."
+
+      - alert: EmbedHighErrorRate
+        expr: |
+          sum(rate(vsgw_embed_requests_total{result!="success"}[5m])) by (job)
+          /
+          sum(rate(vsgw_embed_requests_total[5m])) by (job)
+          > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} embed error rate above 10%"
+          description: "Most likely a wave of empty/invalid text reaching this instance -- check the caller (gatewayd Search path or the consumer's ingest path)."
+
+  - name: coordinator-and-shards
+    rules:
+      - alert: CoordinatorHighErrorRate
+        expr: |
+          sum(rate(vsgw_coordinator_grpc_requests_total{code!="OK"}[5m])) by (method)
+          /
+          sum(rate(vsgw_coordinator_grpc_requests_total[5m])) by (method)
+          > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "coordinator {{ $labels.method }} error rate above 5%"
+          description: "Check vsgw_coordinator_shard_client_requests_total by shard to see whether errors are concentrated on one shard or spread across all of them (routing/all-shards-down vs. one bad shard)."
+
+      - alert: CoordinatorHighLatencyP99
+        expr: |
+          histogram_quantile(0.99, sum(rate(vsgw_coordinator_grpc_request_duration_seconds_bucket[5m])) by (le, method))
+          > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "coordinator {{ $labels.method }} p99 latency above 1s"
+          description: "Search fans out to every shard and waits for all of them (see gather.go) -- one slow shard is enough to slow every Search. Check vsgw_shard_grpc_request_duration_seconds per shard."
+
+      - alert: ShardCallErrors
+        expr: sum(rate(vsgw_coordinator_shard_client_requests_total{result="error"}[5m])) by (shard, method) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Coordinator seeing sustained errors calling shard {{ $labels.shard }}"
+          description: "{{ $labels.method }} calls to shard {{ $labels.shard }} are failing. Check that shard's own health and vsgw_shard_grpc_requests_total{code!=\"OK\"} directly."
+
+      - alert: SearchDegradedCoverage
+        expr: |
+          increase(vsgw_coordinator_search_shards_failed_total[15m])
+          /
+          increase(vsgw_coordinator_search_shards_queried_total[15m])
+          > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Over 5% of shard-queries across all Searches are failing"
+          description: "This is the real degraded-coverage rate (see SearchResponse.shards_failed) -- with allow_partial=true these searches still return a response, just an incomplete one. Persistently high values mean a shard is flapping, not a one-off."
+
+      - alert: ShardNearCapacity
+        expr: vsgw_shard_index_active_vectors / vsgw_shard_index_capacity > 0.9
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Shard {{ $labels.instance }} is over 90% of its fixed capacity"
+          description: "max-elements is fixed at shard creation (shardd -max-elements) -- inserts will start failing with ResourceExhausted once full. This shard needs re-provisioning with more capacity, not just a restart."
+
+      - alert: ShardSnapshotFailing
+        expr: increase(vsgw_shard_snapshot_total{result="error"}[30m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Shard {{ $labels.instance }} snapshot failed"
+          description: "Not immediately fatal -- the WAL still has everything -- but the WAL grows unbounded and crash-recovery time keeps increasing until this is fixed. Check disk space on the shard's data volume first."

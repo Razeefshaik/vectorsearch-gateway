@@ -1,0 +1,56 @@
+# Alertmanager routes/receivers for vectorsearch-gateway.
+#
+# No real notification channel (Slack, PagerDuty, email) is configured here
+# -- this repo has no credentials for one. Alerts are grouped and routed
+# correctly, but the default receiver is a no-op ("null") so `docker compose
+# up` doesn't fail or spam anyone by default. To wire up real notifications,
+# replace the `null` receiver below with one of the commented examples (or
+# see https://prometheus.io/docs/alerting/latest/configuration/#receiver)
+# and point `route.receiver` at it.
+
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: "null"
+  group_by: ["alertname", "job"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    # Critical alerts page/notify sooner and repeat more often than the
+    # default route -- split out here so a real receiver can be pointed at
+    # just this route without touching the info/warning noise floor.
+    - match:
+        severity: critical
+      receiver: "null"
+      group_wait: 10s
+      repeat_interval: 1h
+
+receivers:
+  - name: "null"
+
+  # --- Example: Slack -------------------------------------------------
+  # - name: "slack"
+  #   slack_configs:
+  #     - api_url: "https://hooks.slack.com/services/REPLACE/WITH/YOUR_WEBHOOK"
+  #       channel: "#vectorsearch-alerts"
+  #       send_resolved: true
+  #       title: '{{ .CommonAnnotations.summary }}'
+  #       text: '{{ .CommonAnnotations.description }}'
+
+  # --- Example: generic webhook (PagerDuty, Opsgenie, custom) ---------
+  # - name: "webhook"
+  #   webhook_configs:
+  #     - url: "https://example.com/alertmanager-webhook"
+  #       send_resolved: true
+
+  # --- Example: email ---------------------------------------------------
+  # - name: "email"
+  #   email_configs:
+  #     - to: "oncall@example.com"
+  #       from: "alertmanager@example.com"
+  #       smarthost: "smtp.example.com:587"
+  #       auth_username: "alertmanager@example.com"
+  #       auth_password: "REPLACE_ME"
+  #       send_resolved: true
