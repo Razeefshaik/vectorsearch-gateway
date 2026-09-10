@@ -1,0 +1,22 @@
+# consumer — Kafka ingest worker. Same build pattern as Dockerfile.gatewayd;
+# kept as a separate image because it scales independently of gatewayd (more
+# consumer replicas to drain a backlog, without touching the request path).
+FROM golang:1.26-alpine AS builder
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/consumer ./gateway/consumer
+
+FROM alpine:3.20
+RUN adduser -D -u 10001 appuser
+WORKDIR /app
+COPY --from=builder /out/consumer /app/consumer
+USER appuser
+
+EXPOSE 9102
+
+HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget -qO- "http://localhost:${CONSUMER_METRICS_PORT:-9102}/healthz" || exit 1
+
+ENTRYPOINT ["/app/consumer"]

@@ -1,0 +1,304 @@
+{
+  "title": "vectorsearch-gateway — Overview",
+  "uid": "vsgw-overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "timezone": "browser",
+  "time": { "from": "now-1h", "to": "now" },
+  "refresh": "10s",
+  "tags": ["vectorsearch-gateway"],
+  "panels": [
+    { "type": "row", "title": "Service health", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }, "id": 100 },
+    {
+      "type": "stat",
+      "title": "Service up/down",
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 1 },
+      "id": 101,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "up", "legendFormat": "{{job}}", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        }
+      },
+      "options": { "textMode": "value_and_name", "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+
+    { "type": "row", "title": "gatewayd — request path", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 }, "id": 200 },
+    {
+      "type": "timeseries",
+      "title": "Request rate by method",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 201,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(vsgw_gatewayd_grpc_requests_total[1m])) by (method)", "legendFormat": "{{method}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Error rate by method (non-OK / total)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 202,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(vsgw_gatewayd_grpc_requests_total{code!=\"OK\"}[5m])) by (method) / sum(rate(vsgw_gatewayd_grpc_requests_total[5m])) by (method)",
+          "legendFormat": "{{method}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1, "min": 0 }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Latency p50 / p95 / p99 by method",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "id": 203,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(vsgw_gatewayd_grpc_request_duration_seconds_bucket[5m])) by (le, method))", "legendFormat": "p50 {{method}}", "refId": "A" },
+        { "expr": "histogram_quantile(0.95, sum(rate(vsgw_gatewayd_grpc_request_duration_seconds_bucket[5m])) by (le, method))", "legendFormat": "p95 {{method}}", "refId": "B" },
+        { "expr": "histogram_quantile(0.99, sum(rate(vsgw_gatewayd_grpc_request_duration_seconds_bucket[5m])) by (le, method))", "legendFormat": "p99 {{method}}", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "In-flight requests",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 14 },
+      "id": 204,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "vsgw_gatewayd_grpc_requests_in_flight", "legendFormat": "{{method}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Rate-limit rejections",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 14 },
+      "id": 205,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(vsgw_gatewayd_ratelimiter_denied_total[1m])) by (method)", "legendFormat": "{{method}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Kafka publish rate (gatewayd -> Kafka)",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 22 },
+      "id": 206,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(vsgw_gatewayd_kafka_publish_total[1m])) by (result)", "legendFormat": "{{result}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+
+    { "type": "row", "title": "Ingest pipeline — Kafka + consumer", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 }, "id": 300 },
+    {
+      "type": "timeseries",
+      "title": "Consumer group lag",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 31 },
+      "id": 301,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(kafka_consumergroup_lag) by (consumergroup, topic)", "legendFormat": "{{consumergroup}} / {{topic}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Messages consumed / processed per second",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 31 },
+      "id": 302,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "rate(vsgw_consumer_messages_consumed_total[1m])", "legendFormat": "consumed", "refId": "A" },
+        { "expr": "sum(rate(vsgw_consumer_messages_processed_total[1m])) by (outcome)", "legendFormat": "processed: {{outcome}}", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Processing latency p50 / p95 / p99",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 39 },
+      "id": 303,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(vsgw_consumer_processing_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p50", "refId": "A" },
+        { "expr": "histogram_quantile(0.95, sum(rate(vsgw_consumer_processing_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95", "refId": "B" },
+        { "expr": "histogram_quantile(0.99, sum(rate(vsgw_consumer_processing_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p99", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Commit failures",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 39 },
+      "id": 304,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "increase(vsgw_consumer_commit_failures_total[5m])", "legendFormat": "commit failures", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Consumer -> coordinator Insert results",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 39 },
+      "id": 305,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(vsgw_consumer_coordinator_client_insert_requests_total[1m])) by (result)", "legendFormat": "{{result}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+
+    { "type": "row", "title": "Embed services (search + ingest)", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 47 }, "id": 400 },
+    {
+      "type": "timeseries",
+      "title": "Embed request rate by instance",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 48 },
+      "id": 401,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(vsgw_embed_requests_total[1m])) by (job, result)", "legendFormat": "{{job}} / {{result}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Embed latency p95 by instance",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 48 },
+      "id": 402,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(vsgw_embed_request_duration_seconds_bucket[5m])) by (le, job))", "legendFormat": "{{job}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "In-flight embed requests",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 56 },
+      "id": 403,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "vsgw_embed_requests_in_flight", "legendFormat": "{{job}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Model load time at startup",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 56 },
+      "id": 404,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "vsgw_embed_model_load_seconds", "legendFormat": "{{job}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "options": { "textMode": "value_and_name", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+
+    { "type": "row", "title": "Coordinator & shards (vector-search engine)", "gridPos": { "h": 1, "w": 24, "x": 0, "y": 64 }, "id": 500 },
+    {
+      "type": "timeseries",
+      "title": "Coordinator request rate / error rate by method",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 65 },
+      "id": 501,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(vsgw_coordinator_grpc_requests_total[1m])) by (method, code)", "legendFormat": "{{method}} / {{code}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Coordinator latency p50 / p95 / p99",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 65 },
+      "id": 502,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(vsgw_coordinator_grpc_request_duration_seconds_bucket[5m])) by (le, method))", "legendFormat": "p50 {{method}}", "refId": "A" },
+        { "expr": "histogram_quantile(0.95, sum(rate(vsgw_coordinator_grpc_request_duration_seconds_bucket[5m])) by (le, method))", "legendFormat": "p95 {{method}}", "refId": "B" },
+        { "expr": "histogram_quantile(0.99, sum(rate(vsgw_coordinator_grpc_request_duration_seconds_bucket[5m])) by (le, method))", "legendFormat": "p99 {{method}}", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Coordinator -> shard call results, by shard",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 73 },
+      "id": 503,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(vsgw_coordinator_shard_client_requests_total[1m])) by (shard, method, result)", "legendFormat": "shard {{shard}} / {{method}} / {{result}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Search shard coverage (queried vs. failed)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 73 },
+      "id": 504,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "rate(vsgw_coordinator_search_shards_queried_total[1m])", "legendFormat": "shards queried/s", "refId": "A" },
+        { "expr": "rate(vsgw_coordinator_search_shards_failed_total[1m])", "legendFormat": "shards failed/s", "refId": "B" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Shard gRPC latency p95, by instance",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 81 },
+      "id": 505,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(vsgw_shard_grpc_request_duration_seconds_bucket[5m])) by (le, instance, method))", "legendFormat": "{{instance}} / {{method}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Shard capacity utilization (active / capacity)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 81 },
+      "id": 506,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "vsgw_shard_index_active_vectors / vsgw_shard_index_capacity", "legendFormat": "{{instance}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1, "min": 0 }, "overrides": [] }
+    },
+    {
+      "type": "timeseries",
+      "title": "Shard vector counts (total vs. active)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 89 },
+      "id": 507,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "vsgw_shard_index_vectors_total", "legendFormat": "{{instance}} total", "refId": "A" },
+        { "expr": "vsgw_shard_index_active_vectors", "legendFormat": "{{instance}} active", "refId": "B" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Shard snapshot duration + failures",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 89 },
+      "id": 508,
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(vsgw_shard_snapshot_duration_seconds_bucket[15m])) by (le, instance))", "legendFormat": "{{instance}} p95 duration", "refId": "A" },
+        { "expr": "increase(vsgw_shard_snapshot_total{result=\"error\"}[15m])", "legendFormat": "{{instance}} failures", "refId": "B" }
+      ]
+    }
+  ]
+}

@@ -8,6 +8,10 @@ VS Code (with the Mermaid preview extension), and in the published
 [Gateway Call Map](https://claude.ai/code/artifact/b03c0d0c-ffd3-4e57-9d06-4a1b62c3b420)
 artifact.
 
+For metrics, dashboards, alerting, health checks, and the single-command
+production deploy, see **[docs/MONITORING.md](./MONITORING.md)** — this file
+covers system design and request flow; that one covers operating it.
+
 ---
 
 ## 1. What this project is
@@ -30,13 +34,19 @@ rate-limited router in front of three other services:
 | **consumer** | Go | Standalone binary. Reads ingest events off Kafka, embeds them (via the ingest-side embed instance), and calls `coordinator.Insert`. This is what actually gets data into the index — `gatewayd.Insert` only enqueues it. |
 | **Kafka** | — | Durable queue between "gateway accepted an insert" and "coordinator actually indexed it." Decouples ingest latency from index-write latency. |
 
-> **The coordinator is not part of this repository.** Only its proto contract
+> **The coordinator is not part of this repository** — it's a real,
+> separately-developed system in the sibling
+> [VectorSearchEngine](../../VectorSearchEngine) repo: a stateless
+> `coordinatord` doing scatter-gather routing over 4 durable `shardd`
+> processes, each a WAL-backed HNSW index. This repo has its proto contract
 > (`proto/coordinator.proto`) and generated Go client stubs
-> (`go/proto/coordinatorpb/`) live here. Both `gatewayd` (for `Search`) and
-> `consumer` (for the actual `Insert`) dial it as an external dependency at
-> `COORDINATOR_ADDR`. Until a real coordinator is running, `Search` and the
-> consumer's insert step will fail — everything else in this doc still
-> applies.
+> (`go/proto/coordinatorpb/`), and `docker-compose.yml` builds and runs it
+> as part of this stack (build context `${VSE_PATH}`, default
+> `../VectorSearchEngine`). Both `gatewayd` (for `Search`) and `consumer`
+> (for the actual `Insert`) dial it at `COORDINATOR_ADDR`. See
+> [docs/MONITORING.md §6](./MONITORING.md#6-how-the-coordinatorshards-were-wired-in)
+> for exactly how the two repos are wired together, and that repo's own
+> `ARCHITECTURE.md`/`DEPLOYMENT.md` for its internals.
 
 ---
 
@@ -513,23 +523,44 @@ both Go binaries; Docker Compose reads the same file automatically).
 | `EMBED_INGEST_PORT` | embed-ingest container, consumer | `50054` | Port the ingest-side embed instance listens on. |
 | `COORDINATOR_ADDR` | gatewayd, consumer | `localhost:50052` | Address of the external coordinator/vector-index service. |
 | `GATEWAYD_PORT` | gatewayd | `50053` | Port gatewayd itself listens on. |
+| `GATEWAYD_METRICS_PORT` | gatewayd | `9101` | Port serving `/metrics` and `/healthz` for gatewayd. |
+| `CONSUMER_METRICS_PORT` | consumer | `9102` | Port serving `/metrics` and `/healthz` for the consumer. |
+| `EMBED_SEARCH_METRICS_PORT` | docker-compose (host mapping) | `9103` | Host-side port mapped to embed-search's fixed internal metrics port `9100`. |
+| `EMBED_INGEST_METRICS_PORT` | docker-compose (host mapping) | `9104` | Host-side port mapped to embed-ingest's fixed internal metrics port `9100`. |
 
-Both Go binaries currently derive `embedSearchAddr`/`embedIngestAddr` as
-`"localhost:" + PORT` rather than reading a full address — this only works
-when everything runs on the host network (see §9). Running gatewayd or the
-consumer *inside* a container requires those to resolve by Docker service
-name instead (e.g. `embed-search:50051`), which is a follow-up, not yet done.
+Both Go binaries resolve `embedSearchAddr`/`embedIngestAddr` via
+`config.AddrOrLocalPort("EMBED_SEARCH_ADDR", "EMBED_SEARCH_PORT")`
+(`go/internal/config/config.go`): if `EMBED_SEARCH_ADDR` /
+`EMBED_INGEST_ADDR` are set, they're used as-is (this is how
+`docker-compose.yml` points a containerized gatewayd/consumer at
+`embed-search:50051` / `embed-ingest:50054` by service name); otherwise it
+falls back to `"localhost:" + EMBED_SEARCH_PORT` for local/hybrid dev, where
+only the port is known. See
+[docs/MONITORING.md](./MONITORING.md#environment-variable-reference) for the
+full variable reference including the monitoring stack's own ports.
 
 ---
 
-## 9. Running and testing today (hybrid: Docker infra + local Go)
+## 9. Running and testing
 
-This is the flow actually in use right now — Kafka and the two embed
-instances in Docker, `gatewayd` and `consumer` run locally with `go run`, so
-`localhost:<port>` addressing resolves correctly. The coordinator is not
-running, so `Search` and the consumer's `coordinator.Insert` step will error
-out — everything up to that point (rate limiting, embedding, Kafka
-produce/consume) is fully exercisable without it.
+There are now two supported ways to run this locally. **Full Docker** (every
+service, including gatewayd, consumer, *and* the coordinator + 4 shards,
+containerized, plus the full monitoring stack) is the production-shaped
+path and is the recommended default — see
+[docs/MONITORING.md § Single-command deploy](./MONITORING.md#7-single-command-deploy)
+for `./deploy.ps1` / `./deploy.sh` and everything it starts. This is the
+only flow where `Search` and real inserts work end to end, since the
+coordinator is actually running.
+
+The **hybrid** flow below (Kafka + both embed instances in Docker, `gatewayd`
+and `consumer` run locally with `go run`) is still useful for fast
+iteration on Go code without rebuilding an image each time. It doesn't start
+the coordinator, so `Search` and the consumer's `coordinator.Insert` step
+will error out unless you separately run VectorSearchEngine's own
+`scripts/start_local_cluster.ps1` (see that repo's `DEPLOYMENT.md`) pointed
+at `localhost:8000` (this repo's default `COORDINATOR_ADDR`) — everything up
+to that point (rate limiting, embedding, Kafka produce/consume, metrics) is
+fully exercisable without it either way.
 
 ```mermaid
 flowchart LR
@@ -570,12 +601,14 @@ go run ./gateway/consumer
 # 4. Exercise it with grpcurl (from repo root, another terminal)
 grpcurl -plaintext -import-path ./proto -proto gateway.proto localhost:50053 list
 
-# Insert — succeeds; goes gatewayd -> Kafka -> consumer -> embed-ingest -> (fails at coordinator, expected)
+# Insert — succeeds; goes gatewayd -> Kafka -> consumer -> embed-ingest ->
+# (fails at coordinator -- expected in this hybrid flow, since it isn't
+# started here; use `./deploy.ps1` / `./deploy.sh` for the full stack, §10)
 grpcurl -plaintext -import-path ./proto -proto gateway.proto \
   -d '{"key":{"client_id":1,"label":42},"text":"hello world, this is a test document"}' \
   localhost:50053 vectorsearch.gateway.v1.Gateway/Insert
 
-# Search — fails at the coordinator step (expected, until it exists)
+# Search — fails at the coordinator step for the same reason
 grpcurl -plaintext -import-path ./proto -proto gateway.proto \
   -d '{"text":"hello world","k":5,"ef":50,"allow_partial":true,"client_id":1}' \
   localhost:50053 vectorsearch.gateway.v1.Gateway/Search
@@ -596,24 +629,19 @@ One-time setup: `go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest`.
 
 ---
 
-## 10. What full Docker (everything containerized) still needs
+## 10. Full Docker deployment
 
-Not done yet — listed here so the gap is explicit rather than assumed away:
+`gatewayd` and `consumer` have their own Dockerfiles
+(`go/Dockerfile.gatewayd`, `go/Dockerfile.consumer`), and
+`docker-compose.yml` defines every service including the coordinator + 4
+shards (built from the sibling VectorSearchEngine repo, `${VSE_PATH}`) and
+the monitoring stack. Container-network addressing is handled by
+`go/internal/config.AddrOrLocalPort` (§8); `COORDINATOR_ADDR` resolves to
+`coordinator:8000` inside Docker.
 
-1. **Dockerfiles for `gatewayd` and `consumer`.** Neither Go binary has one;
-   only `python/embed_service/Dockerfile` exists.
-2. **Compose services for `gatewayd`, `consumer`, and `coordinator`.**
-   `docker-compose.yml` currently only defines `kafka`, `embed-search`,
-   `embed-ingest`.
-3. **Docker-network addressing.** Once `gatewayd`/`consumer` run as
-   containers, `localhost:<port>` no longer reaches sibling containers — the
-   env values need to become Compose service names (`kafka:9092`,
-   `embed-search:50051`, `embed-ingest:50054`, `coordinator:50052`), which
-   means either a second `.env.docker` or per-service `environment:`
-   overrides in Compose.
-4. **A real coordinator.** This repo only has its proto contract and
-   generated client stubs — the server implementation is a separate
-   project/image.
+Full detail — every metric, every alert, health-check endpoints, the
+Grafana dashboard, and the `./deploy.ps1` / `./deploy.sh` single-command
+flow — is in [docs/MONITORING.md](./MONITORING.md).
 
 ## 11. Other known gaps (behavioral, not infra)
 

@@ -1,0 +1,70 @@
+# Prometheus config for vectorsearch-gateway. One combined instance scrapes
+# every service in the system -- gatewayd, the consumer, both embed
+# instances, Kafka (via kafka-exporter), and the coordinator + 4 shards
+# (from the sibling VectorSearchEngine repo) -- rather than running a
+# separate Prometheus per service. See docs/MONITORING.md "Why one combined
+# stack" for the reasoning; short version: a Search request's latency is the
+# sum of hops across gatewayd, embed-search, and the coordinator/shards, so
+# the dashboard that actually answers "why is Search slow" has to see all of
+# them on the same time axis with the same label conventions.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    system: vectorsearch-gateway
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: gatewayd
+    static_configs:
+      - targets: ["gatewayd:9101"]
+
+  - job_name: consumer
+    static_configs:
+      - targets: ["consumer:9102"]
+
+  # Both embed instances run identical code (python/embed_service/server.py)
+  # and listen on the same internal metrics port (9100); the job name is
+  # what tells them apart in PromQL and in Grafana.
+  - job_name: embed-search
+    static_configs:
+      - targets: ["embed-search:9100"]
+
+  - job_name: embed-ingest
+    static_configs:
+      - targets: ["embed-ingest:9100"]
+
+  - job_name: kafka
+    static_configs:
+      - targets: ["kafka-exporter:9308"]
+
+  # Coordinator + shards -- the real vector-search engine, from the sibling
+  # VectorSearchEngine repo (go/observability there emits these). See
+  # docs/MONITORING.md "Instrumenting the coordinator" for the metric-naming
+  # convention (vsgw_coordinator_*, vsgw_shard_*) these share with every
+  # other service's metrics.
+  - job_name: coordinator
+    static_configs:
+      - targets: ["coordinator:9105"]
+
+  # All 4 shards listen on the same internal metrics port (9106); the
+  # `instance` label Prometheus attaches from each target string is what
+  # tells them apart in PromQL/Grafana (shard0:9106, shard1:9106, ...).
+  - job_name: shard
+    static_configs:
+      - targets:
+          - "shard0:9106"
+          - "shard1:9106"
+          - "shard2:9106"
+          - "shard3:9106"
