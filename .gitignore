@@ -1,0 +1,11 @@
+# Python virtualenv (python/embed_service dev environment)
+/venv/
+__pycache__/
+*.pyc
+
+# Compiled Go binaries, if built locally instead of via Docker
+*.exe
+
+# Editor/IDE
+.idea/
+.vscode/
