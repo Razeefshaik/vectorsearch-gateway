@@ -27,10 +27,10 @@ volumes:
   prometheus-data:
   alertmanager-data:
   grafana-data:
-  shard0-data:
-  shard1-data:
-  shard2-data:
-  shard3-data:
+  bugbrother-shard0-data:
+  bugbrother-shard1-data:
+  bugbrother-shard2-data:
+  bugbrother-shard3-data:
 
 services:
   # ---------------------------------------------------------------------
@@ -54,10 +54,10 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     healthcheck:
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
-      interval: 10s
-      timeout: 5s
+      interval: 15s
+      timeout: 15s
       retries: 10
-      start_period: 20s
+      start_period: 180s
     deploy:
       resources:
         limits: { cpus: "1.0", memory: 1g }
@@ -71,6 +71,9 @@ services:
       - "${EMBED_SEARCH_METRICS_PORT}:9100"
     environment:
       METRICS_PORT: "9100"
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL}
+      EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION}
+
     command: ["${EMBED_SEARCH_PORT}"]
     deploy:
       resources:
@@ -85,6 +88,8 @@ services:
       - "${EMBED_INGEST_METRICS_PORT}:9100"
     environment:
       METRICS_PORT: "9100"
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL}
+      EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION}
     command: ["${EMBED_INGEST_PORT}"]
     deploy:
       resources:
@@ -155,23 +160,23 @@ services:
   # ---------------------------------------------------------------------
   shard0:
     <<: *shard-defaults
-    command: ["shardd", "-listen", ":7001", "-metrics-listen", ":${SHARD_METRICS_PORT}", "-data", "/data", "-dim", "128", "-max-elements", "500000", "-snapshot-interval", "2m"]
-    volumes: ["shard0-data:/data"]
+    command: ["shardd", "-listen", ":7001", "-metrics-listen", ":${SHARD_METRICS_PORT}", "-data", "/data", "-dim",  "${EMBEDDING_DIMENSION}", "-max-elements", "500000", "-snapshot-interval", "2m"]
+    volumes: ["bugbrother-shard0-data:/data"]
 
   shard1:
     <<: *shard-defaults
-    command: ["shardd", "-listen", ":7001", "-metrics-listen", ":${SHARD_METRICS_PORT}", "-data", "/data", "-dim", "128", "-max-elements", "500000", "-snapshot-interval", "2m"]
-    volumes: ["shard1-data:/data"]
+    command: ["shardd", "-listen", ":7001", "-metrics-listen", ":${SHARD_METRICS_PORT}", "-data", "/data", "-dim",  "${EMBEDDING_DIMENSION}", "-max-elements", "500000", "-snapshot-interval", "2m"]
+    volumes: ["bugbrother-shard1-data:/data"]
 
   shard2:
     <<: *shard-defaults
-    command: ["shardd", "-listen", ":7001", "-metrics-listen", ":${SHARD_METRICS_PORT}", "-data", "/data", "-dim", "128", "-max-elements", "500000", "-snapshot-interval", "2m"]
-    volumes: ["shard2-data:/data"]
+    command: ["shardd", "-listen", ":7001", "-metrics-listen", ":${SHARD_METRICS_PORT}", "-data", "/data", "-dim",  "${EMBEDDING_DIMENSION}", "-max-elements", "500000", "-snapshot-interval", "2m"]
+    volumes: ["bugbrother-shard2-data:/data"]
 
   shard3:
     <<: *shard-defaults
-    command: ["shardd", "-listen", ":7001", "-metrics-listen", ":${SHARD_METRICS_PORT}", "-data", "/data", "-dim", "128", "-max-elements", "500000", "-snapshot-interval", "2m"]
-    volumes: ["shard3-data:/data"]
+    command: ["shardd", "-listen", ":7001", "-metrics-listen", ":${SHARD_METRICS_PORT}", "-data", "/data", "-dim",  "${EMBEDDING_DIMENSION}", "-max-elements", "500000", "-snapshot-interval", "2m"]
+    volumes: ["bugbrother-shard3-data:/data"]
 
   coordinator:
     build: "${VSE_PATH}"

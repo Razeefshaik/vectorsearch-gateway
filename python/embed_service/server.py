@@ -39,13 +39,33 @@ EMBED_MODEL_LOAD_SECONDS = Gauge(
     "Time taken to load the sentence-transformers model at startup.",
 )
 
+MODEL_NAME = os.environ.get(
+    "EMBEDDING_MODEL",
+    "sentence-transformers/all-MiniLM-L6-v2",
+)
+EXPECTED_DIMENSION = int(os.environ.get("EMBEDDING_DIMENSION", "384"))
+
+
 
 class EmbedServicer(embed_pb2_grpc.EmbedServiceServicer):
     def __init__(self):
         start = time.monotonic()
-        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.model = SentenceTransformer(MODEL_NAME)
         EMBED_MODEL_LOAD_SECONDS.set(time.monotonic() - start)
+        actual_dimension = self.model.get_embedding_dimension()
 
+        if actual_dimension != EXPECTED_DIMENSION:
+            raise RuntimeError(
+                "Embedding dimension mismatch: "
+                f"model={MODEL_NAME}, actual={actual_dimension}, "
+                f"expected={EXPECTED_DIMENSION}"
+            )
+        print(
+            "Embedding model ready: "
+            f"model={MODEL_NAME}, dimension={actual_dimension}"
+        )
+    
+    
     def Embed(self, request, context):
         EMBED_IN_FLIGHT.inc()
         start = time.monotonic()
@@ -106,12 +126,12 @@ def serve():
     # server agree on the same port without duplicating it in two places.
     metrics_port = int(os.environ.get("METRICS_PORT", "9100"))
 
-    start_metrics_server(metrics_port)
-
+    
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
     embed_pb2_grpc.add_EmbedServiceServicer_to_server(EmbedServicer(), server)
     server.add_insecure_port(f"[::]:{port}")
     server.start()
+    start_metrics_server(metrics_port)
     print(f"embed service listening on :{port} (metrics on :{metrics_port})")
     server.wait_for_termination()
 

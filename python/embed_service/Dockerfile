@@ -23,7 +23,6 @@ USER appuser
 # HEALTHCHECK and the server agree on it without duplicating the value.
 EXPOSE 50051 9100
 
-HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=5 \
-    CMD python3 -c "import os,urllib.request; urllib.request.urlopen('http://localhost:' + os.environ.get('METRICS_PORT','9100') + '/healthz', timeout=2)" || exit 1
-
-ENTRYPOINT ["python", "server.py"]
+HEALTHCHECK --interval=10s --timeout=5s --start-period=180s --retries=12 \
+    CMD python3 -c "import os,urllib.request; urllib.request.urlopen('http://localhost:' + os.environ.get('METRICS_PORT','9100') + '/healthz', timeout=3)" || exit 1
+ENTRYPOINT ["python", "-u", "server.py"]
