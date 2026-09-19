@@ -9,4 +9,8 @@ import "coordinator.proto";
 message IngestEvent {
   vectorsearch.coordinator.v1.Key key = 1;
   string content = 2;
+
+  // Copied from GatewayInsertRequest. The consumer will put this value
+  // into the final indexing-result event.
+  string correlation_id = 3;
 }

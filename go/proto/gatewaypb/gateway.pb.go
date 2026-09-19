@@ -264,9 +264,12 @@ func (x *GatewaySearchResponse) GetShardsFailed() uint32 {
 }
 
 type GatewayInsertRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Key           *GatewayKey            `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Text          string                 `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Key   *GatewayKey            `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Text  string                 `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
+	// Optional caller-generated identifier used to correlate this request
+	// with its eventual asynchronous indexing result.
+	CorrelationId string `protobuf:"bytes,3,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -315,8 +318,18 @@ func (x *GatewayInsertRequest) GetText() string {
 	return ""
 }
 
+func (x *GatewayInsertRequest) GetCorrelationId() string {
+	if x != nil {
+		return x.CorrelationId
+	}
+	return ""
+}
+
 type GatewayInsertResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Echoes the supplied correlation ID. An empty value means the caller
+	// did not request asynchronous result correlation.
+	CorrelationId string `protobuf:"bytes,1,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -351,9 +364,17 @@ func (*GatewayInsertResponse) Descriptor() ([]byte, []int) {
 	return file_gateway_proto_rawDescGZIP(), []int{5}
 }
 
+func (x *GatewayInsertResponse) GetCorrelationId() string {
+	if x != nil {
+		return x.CorrelationId
+	}
+	return ""
+}
+
 type GatewayDeleteRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Key           *GatewayKey            `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	CorrelationId string                 `protobuf:"bytes,2,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -395,8 +416,16 @@ func (x *GatewayDeleteRequest) GetKey() *GatewayKey {
 	return nil
 }
 
+func (x *GatewayDeleteRequest) GetCorrelationId() string {
+	if x != nil {
+		return x.CorrelationId
+	}
+	return ""
+}
+
 type GatewayDeleteResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	CorrelationId string                 `protobuf:"bytes,1,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -431,6 +460,13 @@ func (*GatewayDeleteResponse) Descriptor() ([]byte, []int) {
 	return file_gateway_proto_rawDescGZIP(), []int{7}
 }
 
+func (x *GatewayDeleteResponse) GetCorrelationId() string {
+	if x != nil {
+		return x.CorrelationId
+	}
+	return ""
+}
+
 var File_gateway_proto protoreflect.FileDescriptor
 
 const file_gateway_proto_rawDesc = "" +
@@ -452,14 +488,18 @@ const file_gateway_proto_rawDesc = "" +
 	"\x15GatewaySearchResponse\x12F\n" +
 	"\aresults\x18\x01 \x03(\v2,.vectorsearch.gateway.v1.GatewayScoredResultR\aresults\x12%\n" +
 	"\x0eshards_queried\x18\x02 \x01(\rR\rshardsQueried\x12#\n" +
-	"\rshards_failed\x18\x03 \x01(\rR\fshardsFailed\"a\n" +
+	"\rshards_failed\x18\x03 \x01(\rR\fshardsFailed\"\x88\x01\n" +
 	"\x14GatewayInsertRequest\x125\n" +
 	"\x03key\x18\x01 \x01(\v2#.vectorsearch.gateway.v1.GatewayKeyR\x03key\x12\x12\n" +
-	"\x04text\x18\x02 \x01(\tR\x04text\"\x17\n" +
-	"\x15GatewayInsertResponse\"M\n" +
+	"\x04text\x18\x02 \x01(\tR\x04text\x12%\n" +
+	"\x0ecorrelation_id\x18\x03 \x01(\tR\rcorrelationId\">\n" +
+	"\x15GatewayInsertResponse\x12%\n" +
+	"\x0ecorrelation_id\x18\x01 \x01(\tR\rcorrelationId\"t\n" +
 	"\x14GatewayDeleteRequest\x125\n" +
-	"\x03key\x18\x01 \x01(\v2#.vectorsearch.gateway.v1.GatewayKeyR\x03key\"\x17\n" +
-	"\x15GatewayDeleteResponse2\xc4\x02\n" +
+	"\x03key\x18\x01 \x01(\v2#.vectorsearch.gateway.v1.GatewayKeyR\x03key\x12%\n" +
+	"\x0ecorrelation_id\x18\x02 \x01(\tR\rcorrelationId\">\n" +
+	"\x15GatewayDeleteResponse\x12%\n" +
+	"\x0ecorrelation_id\x18\x01 \x01(\tR\rcorrelationId2\xc4\x02\n" +
 	"\aGateway\x12g\n" +
 	"\x06Insert\x12-.vectorsearch.gateway.v1.GatewayInsertRequest\x1a..vectorsearch.gateway.v1.GatewayInsertResponse\x12g\n" +
 	"\x06Search\x12-.vectorsearch.gateway.v1.GatewaySearchRequest\x1a..vectorsearch.gateway.v1.GatewaySearchResponse\x12g\n" +

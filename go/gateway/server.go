@@ -90,12 +90,43 @@ func (s *Server) Insert(ctx context.Context, req *gatewaypb.GatewayInsertRequest
 			ClientId: req.Key.ClientId,
 			Label:    req.Key.Label,
 		},
-		Content: req.Text,
+		Content:       req.Text,
+		CorrelationId: req.CorrelationId,
 	}
 
 	if err := s.producer.Publish(ctx, event); err != nil {
 		return nil, err
 	}
 
-	return &gatewaypb.GatewayInsertResponse{}, nil
+	return &gatewaypb.GatewayInsertResponse{
+		CorrelationId: req.CorrelationId,
+	}, nil
+}
+
+// Delete synchronously removes one vector. A missing vector is treated as
+// success so callers can safely retry cleanup after a timeout or crash.
+func (s *Server) Delete(ctx context.Context, req *gatewaypb.GatewayDeleteRequest) (*gatewaypb.GatewayDeleteResponse, error) {
+	if req == nil || req.Key == nil {
+		return nil, status.Error(codes.InvalidArgument, "key is required")
+	}
+
+	clientID := strconv.FormatUint(req.Key.ClientId, 10)
+	if !s.limiter.Allow(clientID) {
+		ratelimitDeniedTotal.WithLabelValues("Delete").Inc()
+		return nil, status.Error(codes.ResourceExhausted, "rate limit exceeded")
+	}
+
+	_, err := s.coordinator.Delete(ctx, &coordinatorpb.DeleteRequest{
+		Key: &coordinatorpb.Key{
+			ClientId: req.Key.ClientId,
+			Label:    req.Key.Label,
+		},
+	})
+	if err != nil && status.Code(err) != codes.NotFound {
+		return nil, err
+	}
+
+	return &gatewaypb.GatewayDeleteResponse{
+		CorrelationId: req.CorrelationId,
+	}, nil
 }

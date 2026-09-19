@@ -80,6 +80,7 @@ func main() {
 
 	kafkaBroker := config.Getenv("KAFKA_BROKER", "localhost:9092")
 	topic := config.Getenv("INGEST_TOPIC", "ingest-events")
+	resultTopic := config.Getenv("RESULT_TOPIC", "vector-index-results")
 	group := config.Getenv("CONSUMER_GROUP", "ingest-consumers")
 	embedIngestAddr := config.AddrOrLocalPort("EMBED_INGEST_ADDR", "EMBED_INGEST_PORT")
 	coordinatorAddr := config.Getenv("COORDINATOR_ADDR", "localhost:50052")
@@ -109,6 +110,9 @@ func main() {
 	})
 	defer reader.Close()
 
+	resultProducer := NewResultProducer(kafkaBroker, resultTopic)
+	defer resultProducer.Close()
+
 	log.Printf("consumer started, waiting for events... (metrics on %s)", metricsAddr)
 
 	for {
@@ -118,15 +122,39 @@ func main() {
 		}
 		messagesConsumedTotal.Inc()
 
-		start := time.Now()
-		shouldCommit := processEvent(context.Background(), embedClient, coordClient, msg.Value)
-		processingDuration.Observe(time.Since(start).Seconds())
+		retryDelay := time.Second
+		for {
+			start := time.Now()
+			shouldCommit := processEvent(
+				context.Background(),
+				embedClient,
+				coordClient,
+				resultProducer,
+				msg.Value,
+			)
+			processingDuration.Observe(time.Since(start).Seconds())
 
-		if shouldCommit {
-			if err := reader.CommitMessages(context.Background(), msg); err != nil {
-				commitFailuresTotal.Inc()
-				log.Printf("FAILED to commit offset for key=%s: %v", string(msg.Key), err)
+			if shouldCommit {
+				break
 			}
+
+			log.Printf(
+				"retrying ingest event key=%s after %s",
+				string(msg.Key),
+				retryDelay,
+			)
+			time.Sleep(retryDelay)
+			if retryDelay < 30*time.Second {
+				retryDelay *= 2
+				if retryDelay > 30*time.Second {
+					retryDelay = 30 * time.Second
+				}
+			}
+		}
+
+		if err := reader.CommitMessages(context.Background(), msg); err != nil {
+			commitFailuresTotal.Inc()
+			log.Printf("FAILED to commit offset for key=%s: %v", string(msg.Key), err)
 		}
 	}
 }
@@ -137,12 +165,23 @@ func main() {
 // help (an unrecoverable event should not block every later message on this
 // partition forever). It returns false only for transient failures, where
 // leaving the offset uncommitted lets Kafka redeliver the event later.
-func processEvent(ctx context.Context, embed embedpb.EmbedServiceClient, coord coordinatorpb.VectorSearchClient, raw []byte) bool {
+func processEvent(
+	ctx context.Context,
+	embed embedpb.EmbedServiceClient,
+	coord coordinatorpb.VectorSearchClient,
+	resultProducer *ResultProducer,
+	raw []byte,
+) bool {
 	var event ingestpb.IngestEvent
 	if err := proto.Unmarshal(raw, &event); err != nil {
 		log.Printf("FAILED (permanent): could not unmarshal event: %v", err)
 		messagesProcessedTotal.WithLabelValues("permanent_error").Inc()
 		return true
+	}
+	if event.Key == nil {
+		log.Printf("FAILED (permanent): ingest event has no vector key")
+		messagesProcessedTotal.WithLabelValues("permanent_error").Inc()
+		return publishFinalResult(ctx, resultProducer, &event, resultOutcomeFailed, false, "MISSING_VECTOR_KEY", "Ingest event has no vector key")
 	}
 
 	embedResp, err := embed.Embed(ctx, &embedpb.EmbedRequest{Text: event.Content})
@@ -153,7 +192,7 @@ func processEvent(ctx context.Context, embed embedpb.EmbedServiceClient, coord c
 			log.Printf("FAILED (permanent): empty/invalid content for client_id=%d label=%d: %v",
 				event.Key.ClientId, event.Key.Label, err)
 			messagesProcessedTotal.WithLabelValues("permanent_error").Inc()
-			return true
+			return publishFinalResult(ctx, resultProducer, &event, resultOutcomeFailed, false, "EMBEDDING_INVALID_ARGUMENT", err.Error())
 		}
 		embedRequestsTotal.WithLabelValues("error").Inc()
 		log.Printf("FAILED (transient): embed service error, will retry: %v", err)
@@ -174,13 +213,19 @@ func processEvent(ctx context.Context, embed embedpb.EmbedServiceClient, coord c
 			log.Printf("OK (duplicate, treated as success): client_id=%d label=%d",
 				event.Key.ClientId, event.Key.Label)
 			messagesProcessedTotal.WithLabelValues("duplicate").Inc()
-			return true
-		case codes.ResourceExhausted, codes.InvalidArgument:
+			return publishFinalResult(ctx, resultProducer, &event, resultOutcomeIndexed, true, "", "")
+		case codes.ResourceExhausted:
 			coordinatorInsertTotal.WithLabelValues("permanent_error").Inc()
 			log.Printf("FAILED (permanent): client_id=%d label=%d: %v",
 				event.Key.ClientId, event.Key.Label, err)
 			messagesProcessedTotal.WithLabelValues("permanent_error").Inc()
-			return true
+			return publishFinalResult(ctx, resultProducer, &event, resultOutcomeFailed, false, "VECTOR_CAPACITY_EXHAUSTED", err.Error())
+		case codes.InvalidArgument:
+			coordinatorInsertTotal.WithLabelValues("permanent_error").Inc()
+			log.Printf("FAILED (permanent): client_id=%d label=%d: %v",
+				event.Key.ClientId, event.Key.Label, err)
+			messagesProcessedTotal.WithLabelValues("permanent_error").Inc()
+			return publishFinalResult(ctx, resultProducer, &event, resultOutcomeFailed, false, "VECTOR_INVALID_ARGUMENT", err.Error())
 		default:
 			coordinatorInsertTotal.WithLabelValues("transient_error").Inc()
 			log.Printf("FAILED (transient): coordinator error, will retry: %v", err)
@@ -192,5 +237,25 @@ func processEvent(ctx context.Context, embed embedpb.EmbedServiceClient, coord c
 	coordinatorInsertTotal.WithLabelValues("success").Inc()
 	messagesProcessedTotal.WithLabelValues("success").Inc()
 	log.Printf("OK: inserted client_id=%d label=%d", event.Key.ClientId, event.Key.Label)
+	return publishFinalResult(ctx, resultProducer, &event, resultOutcomeIndexed, false, "", "")
+}
+
+func publishFinalResult(
+	ctx context.Context,
+	resultProducer *ResultProducer,
+	event *ingestpb.IngestEvent,
+	outcome string,
+	duplicate bool,
+	errorCode string,
+	errorMessage string,
+) bool {
+	if err := resultProducer.Publish(ctx, event, outcome, duplicate, errorCode, errorMessage); err != nil {
+		log.Printf(
+			"FAILED to publish final indexing result for correlation_id=%q: %v",
+			event.CorrelationId,
+			err,
+		)
+		return false
+	}
 	return true
 }

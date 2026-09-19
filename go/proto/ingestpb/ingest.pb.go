@@ -23,9 +23,12 @@ const (
 )
 
 type IngestEvent struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Key           *coordinatorpb.Key     `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Content       string                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Key     *coordinatorpb.Key     `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Content string                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	// Copied from GatewayInsertRequest. The consumer will put this value
+	// into the final indexing-result event.
+	CorrelationId string `protobuf:"bytes,3,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -74,14 +77,22 @@ func (x *IngestEvent) GetContent() string {
 	return ""
 }
 
+func (x *IngestEvent) GetCorrelationId() string {
+	if x != nil {
+		return x.CorrelationId
+	}
+	return ""
+}
+
 var File_ingest_proto protoreflect.FileDescriptor
 
 const file_ingest_proto_rawDesc = "" +
 	"\n" +
-	"\fingest.proto\x12\x16vectorsearch.ingest.v1\x1a\x11coordinator.proto\"[\n" +
+	"\fingest.proto\x12\x16vectorsearch.ingest.v1\x1a\x11coordinator.proto\"\x82\x01\n" +
 	"\vIngestEvent\x122\n" +
 	"\x03key\x18\x01 \x01(\v2 .vectorsearch.coordinator.v1.KeyR\x03key\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\tR\acontentBHZFgithub.com/Razeefshaik/vectorsearch-gateway/go/proto/ingestpb;ingestpbb\x06proto3"
+	"\acontent\x18\x02 \x01(\tR\acontent\x12%\n" +
+	"\x0ecorrelation_id\x18\x03 \x01(\tR\rcorrelationIdBHZFgithub.com/Razeefshaik/vectorsearch-gateway/go/proto/ingestpb;ingestpbb\x06proto3"
 
 var (
 	file_ingest_proto_rawDescOnce sync.Once
