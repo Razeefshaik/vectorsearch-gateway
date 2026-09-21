@@ -12,6 +12,7 @@ from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTEN
 
 import embed_pb2
 import embed_pb2_grpc
+from embedding_cache import EmbeddingCache
 
 import torch
 torch.set_num_threads(1)
@@ -38,12 +39,18 @@ EMBED_MODEL_LOAD_SECONDS = Gauge(
     "vsgw_embed_model_load_seconds",
     "Time taken to load the sentence-transformers model at startup.",
 )
+EMBED_CACHE_REQUESTS_TOTAL = Counter(
+    "vsgw_embed_cache_requests_total",
+    "Embedding cache lookups, by result.",
+    ["result"],
+)
 
 MODEL_NAME = os.environ.get(
     "EMBEDDING_MODEL",
     "sentence-transformers/all-MiniLM-L6-v2",
 )
 EXPECTED_DIMENSION = int(os.environ.get("EMBEDDING_DIMENSION", "384"))
+CACHE_MAX_ENTRIES = int(os.environ.get("EMBED_CACHE_MAX_ENTRIES", "0"))
 
 
 
@@ -51,6 +58,7 @@ class EmbedServicer(embed_pb2_grpc.EmbedServiceServicer):
     def __init__(self):
         start = time.monotonic()
         self.model = SentenceTransformer(MODEL_NAME)
+        self.cache = EmbeddingCache(CACHE_MAX_ENTRIES)
         EMBED_MODEL_LOAD_SECONDS.set(time.monotonic() - start)
         actual_dimension = self.model.get_embedding_dimension()
 
@@ -76,9 +84,15 @@ class EmbedServicer(embed_pb2_grpc.EmbedServiceServicer):
                 context.set_details("text must not be empty")
                 return embed_pb2.EmbedResponse()
 
-            vector = self.model.encode(request.text)
+            vector = self.cache.get(MODEL_NAME, request.text)
+            if vector is None:
+                EMBED_CACHE_REQUESTS_TOTAL.labels(result="miss").inc()
+                vector = self.model.encode(request.text).tolist()
+                self.cache.put(MODEL_NAME, request.text, vector)
+            else:
+                EMBED_CACHE_REQUESTS_TOTAL.labels(result="hit").inc()
             EMBED_REQUESTS_TOTAL.labels(result="success").inc()
-            return embed_pb2.EmbedResponse(vector=vector.tolist())
+            return embed_pb2.EmbedResponse(vector=vector)
         finally:
             EMBED_REQUEST_DURATION.observe(time.monotonic() - start)
             EMBED_IN_FLIGHT.dec()

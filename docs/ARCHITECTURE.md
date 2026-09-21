@@ -14,6 +14,12 @@ covers system design and request flow; that one covers operating it.
 
 ---
 
+> **BugBrother feature branch behavior:** On
+> `feature/search-client-id-isolation`, `gatewayd` does not create or consult
+> the token-bucket limiter. Search, Insert, and Delete reach their downstream
+> services without a gateway rate-limit check. The limiter descriptions and
+> diagrams below document the original client-facing `master` design.
+
 ## 1. What this project is
 
 `vectorsearch-gateway` is the public-facing edge of a vector search system. A
@@ -93,6 +99,13 @@ run the same code (`python/embed_service/server.py`) on different ports
 (`EMBED_SEARCH_PORT` / `EMBED_INGEST_PORT`). Splitting them means a burst of
 ingest traffic saturating its CPU-bound embedding model doesn't add latency to
 interactive search requests, and vice versa — they scale independently.
+
+On the BugBrother feature branch, `embed-ingest` keeps a bounded, process-local
+LRU cache of embeddings keyed by model and exact text hash.
+`EMBED_CACHE_MAX_ENTRIES` controls its size (default 2,048 in Compose; zero
+disables it). A cache hit skips model inference, but the consumer still inserts
+the vector under the event's client ID and label. The cache is empty after a
+container restart; `embed-search` does not enable it.
 
 **Why Kafka sits between `Insert` and the coordinator:** `gatewayd.Insert`
 returns as soon as the event is durably queued, not once it's indexed. That

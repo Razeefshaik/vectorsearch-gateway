@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net"
-	"time"
 
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
@@ -15,7 +14,6 @@ import (
 	coordinatorpb "github.com/Razeefshaik/vectorsearch-gateway/go/proto/coordinatorpb"
 	embedpb "github.com/Razeefshaik/vectorsearch-gateway/go/proto/embedpb"
 	gatewaypb "github.com/Razeefshaik/vectorsearch-gateway/go/proto/gatewaypb"
-	"github.com/Razeefshaik/vectorsearch-gateway/go/ratelimiter"
 )
 
 func main() {
@@ -57,10 +55,7 @@ func main() {
 
 	producer := gatewayd.NewIngestProducer(kafkaBroker, ingestTopic)
 
-	limiter := ratelimiter.NewLimiter(10, 1)
-	limiter.StartCleanup(1*time.Minute, 10*time.Minute)
-
-	server := gatewayd.NewServer(coordinatorClient, embedSearchClient, producer, limiter)
+	server := gatewayd.NewServer(coordinatorClient, embedSearchClient, producer)
 
 	lis, err := net.Listen("tcp", ":"+gatewaydPort)
 	if err != nil {

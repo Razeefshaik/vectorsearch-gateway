@@ -2,6 +2,8 @@
 
 > Snapshot date: 12 September 2026. This document describes the checked-out code as it currently exists. It is a current-state map, including broken, asynchronous, and missing connections. It does not describe a proposed target architecture.
 
+> **Later branch change:** On `feature/search-client-id-isolation`, gatewayd no longer applies its token-bucket rate limiter to Search, Insert, or Delete. Any rate-limit description below reflects the September 12 snapshot or the original `master` design.
+
 ## 1. Scope and repository state
 
 The complete application is spread across three repositories:

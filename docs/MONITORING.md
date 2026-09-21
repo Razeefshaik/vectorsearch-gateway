@@ -8,6 +8,12 @@ what the system *is* and how a request flows through it, see
 
 ---
 
+> **BugBrother feature branch behavior:**
+> `feature/search-client-id-isolation` does not emit gateway rate-limit denials
+> because gatewayd does not use the token-bucket limiter on this branch.
+> Watch Kafka publish failures, consumer lag, embedding latency, and vector
+> insertion failures to understand indexing capacity.
+
 ## 1. Why one combined monitoring stack
 
 The question this project raised explicitly: should gatewayd, the embed

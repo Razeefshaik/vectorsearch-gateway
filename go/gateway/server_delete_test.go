@@ -6,7 +6,6 @@ import (
 
 	coordinatorpb "github.com/Razeefshaik/vectorsearch-gateway/go/proto/coordinatorpb"
 	gatewaypb "github.com/Razeefshaik/vectorsearch-gateway/go/proto/gatewaypb"
-	"github.com/Razeefshaik/vectorsearch-gateway/go/ratelimiter"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -38,7 +37,6 @@ func TestDeleteTreatsMissingVectorAsSuccessfulRetry(t *testing.T) {
 		},
 		nil,
 		nil,
-		ratelimiter.NewLimiter(10, 1),
 	)
 
 	response, err := server.Delete(context.Background(), &gatewaypb.GatewayDeleteRequest{
