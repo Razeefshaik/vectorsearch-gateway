@@ -1,0 +1,41 @@
+# Local laptop test: one embedding process, one shard, and one Kafka broker.
+# The full stack is still available with: docker compose -f docker-compose.yml up
+services:
+  embed-search:
+    profiles: [full]
+  shard1:
+    profiles: [full]
+  shard2:
+    profiles: [full]
+  shard3:
+    profiles: [full]
+  prometheus:
+    profiles: [full]
+  alertmanager:
+    profiles: [full]
+  kafka-exporter:
+    profiles: [full]
+  grafana:
+    profiles: [full]
+
+  kafka:
+    environment:
+      KAFKA_HEAP_OPTS: -Xms256m -Xmx512m
+
+  embed-ingest:
+    deploy:
+      resources:
+        limits: { cpus: "2.0", memory: 2g }
+
+  coordinator:
+    command: ["coordinatord", "-listen", ":8000", "-metrics-listen", ":${COORDINATOR_METRICS_PORT}", "-shards", "shard0:7001"]
+    depends_on: !override
+      shard0: { condition: service_healthy }
+
+  gatewayd:
+    environment:
+      EMBED_SEARCH_ADDR: "embed-ingest:${EMBED_INGEST_PORT}"
+    depends_on: !override
+      kafka: { condition: service_healthy }
+      embed-ingest: { condition: service_healthy }
+      coordinator: { condition: service_healthy }
